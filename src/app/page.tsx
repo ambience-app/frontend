@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import WalletConnect from "@/components/WalletConnect";
 
 export default function Home() {
   return (
@@ -22,12 +25,10 @@ export default function Home() {
               <a href="#how-it-works" className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 How It Works
               </a>
-              <Link
-                href="/chat"
-                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-medium hover:shadow-lg hover:scale-105 transition-all duration-200"
-              >
-                Launch App
-              </Link>
+              <WalletConnect />
+            </div>
+            <div className="md:hidden">
+              <WalletConnect />
             </div>
           </div>
         </div>
