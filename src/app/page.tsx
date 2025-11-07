@@ -25,6 +25,9 @@ export default function Home() {
               <a href="#how-it-works" className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 How It Works
               </a>
+              <Link href="/profile" className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                Profile
+              </Link>
               <WalletConnect />
             </div>
             <div className="md:hidden">
