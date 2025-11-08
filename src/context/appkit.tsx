@@ -7,7 +7,7 @@ import type { AppKitNetwork } from "@reown/appkit/networks";
 import { ReactNode } from "react";
 
 // Environment detection
-const isMainnet = 'mainnet';
+const isMainnet = process.env.NEXT_PUBLIC_NETWORK === 'mainnet';
 
 // Dynamic network configuration based on environment
 const mainnetNetworks: [AppKitNetwork, ...AppKitNetwork[]] = [base];
