@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import WalletConnect from "@/components/WalletConnect";
+import { useState } from "react";
 
 export default function Home() {
+  const [showComingSoon, setShowComingSoon] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
       {/* Navigation */}
@@ -65,15 +68,15 @@ export default function Home() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link
-                href="/chat"
+              <button
+                onClick={() => setShowComingSoon(true)}
                 className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-semibold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-200 flex items-center gap-2"
               >
                 Start Chatting
                 <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
-              </Link>
+              </button>
               <a
                 href="#how-it-works"
                 className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-full font-semibold text-lg border-2 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg transition-all duration-200"
@@ -233,15 +236,15 @@ export default function Home() {
             <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
               Join the future of communication. Connect your wallet and start chatting on the blockchain today.
             </p>
-            <Link
-              href="/chat"
+            <button
+              onClick={() => setShowComingSoon(true)}
               className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 rounded-full font-semibold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-200"
             >
               Launch Ambience Chat
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
-            </Link>
+            </button>
           </div>
         </div>
       </section>
@@ -264,6 +267,39 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Coming Soon Modal */}
+      {showComingSoon && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowComingSoon(false)}
+        >
+          <div
+            className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-slate-200 dark:border-slate-700"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">
+                Coming Soon!
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400 mb-6">
+                The chat feature is currently under development. We're working hard to bring you the best decentralized messaging experience. Stay tuned!
+              </p>
+              <button
+                onClick={() => setShowComingSoon(false)}
+                className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200"
+              >
+                Got it!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
