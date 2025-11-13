@@ -10,6 +10,9 @@ import Image from "next/image";
 
 export default function WalletConnect() {
   const [mounted, setMounted] = useState(false);
+  const isE2EMode = process.env.NEXT_PUBLIC_E2E === "1";
+  const [e2eConnected, setE2eConnected] = useState(false);
+
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false); // 🟢 NEW: Loading state
@@ -25,10 +28,21 @@ export default function WalletConnect() {
   const { address: wagmiAddress, isConnected: wagmiIsConnected, connector } = useAccount();
   const { disconnect: wagmiDisconnect } = useWagmiDisconnect();
 
-  const address = appkitAddress || wagmiAddress;
-  const isConnected = appkitIsConnected || wagmiIsConnected;
-
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && isE2EMode) {
+      const params = new URLSearchParams(window.location.search);
+      const preset = params.get("e2eConnected");
+      if (preset === "true") setE2eConnected(true);
+      if (preset === "false") setE2eConnected(false);
+    }
+  }, [isE2EMode]);
+
+  const baseAddress = appkitAddress || wagmiAddress;
+  const baseIsConnected = appkitIsConnected || wagmiIsConnected;
+  const address = isE2EMode && e2eConnected ? "0x1234567890abcdef1234567890abcdefabcd" : baseAddress;
+  const isConnected = isE2EMode ? e2eConnected : baseIsConnected;
 
   const truncateAddress = (addr: string | undefined) =>
     addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : "";
@@ -107,6 +121,10 @@ export default function WalletConnect() {
     setIsDropdownOpen(false);
     setIsDisconnecting(true);
     try {
+      if (isE2EMode) {
+        setE2eConnected(false);
+        return;
+      }
       if (appkitIsConnected) {
         await appkitDisconnect();
       }
