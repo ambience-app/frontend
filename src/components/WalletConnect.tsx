@@ -15,6 +15,8 @@ export default function WalletConnect() {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false); // 🟢 NEW: Loading state
+  const [isDisconnecting, setIsDisconnecting] = useState(false); // optional future UX polish
 
   // AppKit hooks
   const { address: appkitAddress, isConnected: appkitIsConnected } = useAppKitAccount();
@@ -48,18 +50,13 @@ export default function WalletConnect() {
   const getWalletIcon = () => {
     const sanitizeImageUrl = (url: string) => {
       if (!url) return null;
-
       try {
         const trimmedUrl = url.trim();
-
-        if (trimmedUrl.startsWith('data:')) {
-          return trimmedUrl;
-        }
-
+        if (trimmedUrl.startsWith("data:")) return trimmedUrl;
         new URL(trimmedUrl);
         return trimmedUrl;
       } catch {
-        console.warn('Invalid wallet icon URL:', url);
+        console.warn("Invalid wallet icon URL:", url);
         return null;
       }
     };
@@ -107,33 +104,37 @@ export default function WalletConnect() {
 
   const getWalletName = () => walletInfo?.name || connector?.name || "Connected Wallet";
 
+  // 🟢 UPDATED: show spinner & disable button during connect
   const handleConnect = async () => {
     try {
-      if (isE2EMode) {
-        setE2eConnected(true);
-        return;
-      }
+      setIsConnecting(true);
       await open();
     } catch (error: unknown) {
       console.error("Connection error:", error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsConnecting(false);
     }
   };
 
-  const handleDisconnect = () => {
+  // Optional disconnect loading
+  const handleDisconnect = async () => {
     setIsDropdownOpen(false);
+    setIsDisconnecting(true);
     try {
       if (isE2EMode) {
         setE2eConnected(false);
         return;
       }
       if (appkitIsConnected) {
-        appkitDisconnect();
+        await appkitDisconnect();
       }
       if (wagmiIsConnected) {
-        wagmiDisconnect();
+        await wagmiDisconnect();
       }
     } catch (error: unknown) {
       console.error("Disconnect error:", error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsDisconnecting(false);
     }
   };
 
@@ -148,7 +149,7 @@ export default function WalletConnect() {
   // Handle click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (!(event.target as Element).closest('[data-wallet-dropdown]')) {
+      if (!(event.target as Element).closest("[data-wallet-dropdown]")) {
         setIsDropdownOpen(false);
       }
     };
@@ -158,7 +159,7 @@ export default function WalletConnect() {
 
   if (!mounted) {
     return (
-      <button className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-medium hover:shadow-lg hover:scale-105 transition-all duration-200">
+      <button className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-medium">
         Connect Wallet
       </button>
     );
@@ -168,10 +169,44 @@ export default function WalletConnect() {
     return (
       <button
         onClick={handleConnect}
-        className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-medium hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center gap-2"
+        disabled={isConnecting}
+        className={`px-6 py-2 flex items-center gap-2 rounded-full font-medium text-white transition-all duration-200 ${
+          isConnecting
+            ? "bg-blue-400 cursor-not-allowed"
+            : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-lg hover:scale-105"
+        }`}
       >
-        <Wallet className="w-5 h-5" />
-        Connect Wallet
+        {isConnecting ? (
+          <>
+            {/* Spinner */}
+            <svg
+              className="animate-spin h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              ></path>
+            </svg>
+            Connecting...
+          </>
+        ) : (
+          <>
+            <Wallet className="w-5 h-5" />
+            Connect Wallet
+          </>
+        )}
       </button>
     );
   }
@@ -183,9 +218,7 @@ export default function WalletConnect() {
         className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-full px-4 py-2 hover:shadow-lg transition-all duration-200 border border-slate-200 dark:border-slate-700"
       >
         <span className="font-medium text-sm">{truncateAddress(address)}</span>
-        <div className="flex items-center">
-          {getWalletIcon()}
-        </div>
+        <div className="flex items-center">{getWalletIcon()}</div>
         <ChevronDown className="w-4 h-4" />
       </button>
 
@@ -227,17 +260,60 @@ export default function WalletConnect() {
               rel="noopener noreferrer"
               className="flex items-center gap-3 px-3 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-sm transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
               </svg>
               View on Explorer
             </a>
             <button
               onClick={handleDisconnect}
-              className="w-full flex items-center gap-3 px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm transition-colors mt-1"
+              disabled={isDisconnecting}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors mt-1 ${
+                isDisconnecting
+                  ? "cursor-not-allowed opacity-70 bg-red-100 dark:bg-red-900/20 text-red-500"
+                  : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+              }`}
             >
-              <LogOut className="w-4 h-4" />
-              Disconnect
+              {isDisconnecting ? (
+                <>
+                  <svg
+                    className="animate-spin w-4 h-4 text-red-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    ></path>
+                  </svg>
+                  Disconnecting...
+                </>
+              ) : (
+                <>
+                  <LogOut className="w-4 h-4" />
+                  Disconnect
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -245,4 +321,3 @@ export default function WalletConnect() {
     </div>
   );
 }
-
