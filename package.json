@@ -9,6 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "prepare": "husky",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\"",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "e2e": "playwright test"
@@ -43,18 +45,25 @@
     "@vitest/coverage-v8": "^4.0.8",
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-storybook": "^10.0.6",
     "husky": "^9.1.6",
     "lint-staged": "^15.2.10",
     "playwright": "^1.56.1",
+    "prettier": "^3.6.2",
     "storybook": "^10.0.6",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.0.8"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx}": [
-      "eslint --fix"
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
     ]
   }
 }
