@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import { PlausibleProvider } from "next-plausible";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,12 +47,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN || "ambience-chat.vercel.app";
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>{children}</Providers>
+        <PlausibleProvider domain={plausibleDomain} trackOutboundLinks>
+          <Providers>{children}</Providers>
+        </PlausibleProvider>
       </body>
     </html>
   );

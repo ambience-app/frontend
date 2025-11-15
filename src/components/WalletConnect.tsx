@@ -7,6 +7,7 @@ import { useAccount, useDisconnect as useWagmiDisconnect } from "wagmi";
 import { Wallet, ChevronDown, LogOut, Copy, Check } from "lucide-react";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { usePlausible } from "next-plausible";
 
 export default function WalletConnect() {
   const [mounted, setMounted] = useState(false);
@@ -15,8 +16,8 @@ export default function WalletConnect() {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false); // 🟢 NEW: Loading state
-  const [isDisconnecting, setIsDisconnecting] = useState(false); // optional future UX polish
+
+  const plausible = usePlausible();
 
   // AppKit hooks
   const { address: appkitAddress, isConnected: appkitIsConnected } = useAppKitAccount();
@@ -104,37 +105,39 @@ export default function WalletConnect() {
 
   const getWalletName = () => walletInfo?.name || connector?.name || "Connected Wallet";
 
-  // 🟢 UPDATED: show spinner & disable button during connect
   const handleConnect = async () => {
     try {
-      setIsConnecting(true);
+      if (isE2EMode) {
+        setE2eConnected(true);
+        return;
+      }
       await open();
+      if (!isE2EMode) {
+        plausible("wallet_connect");
+      }
     } catch (error: unknown) {
       console.error("Connection error:", error instanceof Error ? error.message : String(error));
-    } finally {
-      setIsConnecting(false);
     }
   };
 
-  // Optional disconnect loading
   const handleDisconnect = async () => {
     setIsDropdownOpen(false);
-    setIsDisconnecting(true);
     try {
       if (isE2EMode) {
         setE2eConnected(false);
         return;
       }
       if (appkitIsConnected) {
-        await appkitDisconnect();
+        appkitDisconnect();
       }
       if (wagmiIsConnected) {
-        await wagmiDisconnect();
+        wagmiDisconnect();
+      }
+      if (!isE2EMode) {
+        plausible("wallet_disconnect");
       }
     } catch (error: unknown) {
       console.error("Disconnect error:", error instanceof Error ? error.message : String(error));
-    } finally {
-      setIsDisconnecting(false);
     }
   };
 
