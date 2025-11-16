@@ -4,6 +4,7 @@ import Link from "next/link";
 import WalletConnect from "@/components/WalletConnect";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -33,9 +34,11 @@ export default function Home() {
               <Link href="/profile" className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md">
                 Profile
               </Link>
+              <ThemeToggle />
               <WalletConnect />
             </div>
             <div className="md:hidden flex items-center gap-2">
+              <ThemeToggle />
               <WalletConnect />
               <button
                 aria-label="Open menu"
