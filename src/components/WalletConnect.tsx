@@ -210,7 +210,7 @@ export default function WalletConnect() {
                   <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm truncate">
                     {getWalletName()}
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  <p className="text-xs text-slate-600 dark:text-slate-300 truncate">
                     {truncateAddress(address)}
                   </p>
                 </div>

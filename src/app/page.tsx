@@ -25,13 +25,13 @@ export default function Home() {
               </span>
             </div>
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md">
+              <a href="#features" className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md">
                 Features
               </a>
-              <a href="#how-it-works" className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md">
+              <a href="#how-it-works" className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md">
                 How It Works
               </a>
-              <Link href="/profile" className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md">
+              <Link href="/profile" className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md">
                 Profile
               </Link>
               <ThemeToggle />
@@ -104,7 +104,7 @@ export default function Home() {
               </span>
             </h1>
             
-            <p className="text-xl sm:text-2xl text-slate-600 dark:text-slate-300 mb-12 leading-relaxed max-w-3xl mx-auto">
+            <p className="text-xl sm:text-2xl text-slate-700 dark:text-slate-200 mb-12 leading-relaxed max-w-3xl mx-auto">
               Experience the future of messaging with <span className="font-semibold text-blue-600 dark:text-blue-400">Ambience</span> — 
               a fully decentralized chat application where every message is stored onchain, 
               ensuring immutability, transparency, and true ownership.
@@ -150,7 +150,7 @@ export default function Home() {
                   </div>
                   <div>
                     <div className="font-semibold text-slate-900 dark:text-slate-100">Ambience Chat</div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400">Powered by Base Blockchain</div>
+                    <div className="text-sm text-slate-600 dark:text-slate-300">Powered by Base Blockchain</div>
                   </div>
                 </div>
                 <div className="space-y-3">
@@ -158,13 +158,13 @@ export default function Home() {
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500"></div>
                     <motion.div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-tl-none p-4" initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.25 }}>
                       <p className="text-slate-900 dark:text-slate-100">Welcome to the future of messaging! 🚀</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Onchain • Immutable</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">Onchain • Immutable</p>
                     </motion.div>
                   </div>
                   <div className="flex gap-3 justify-end">
                     <motion.div className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl rounded-tr-none p-4 text-white max-w-md ml-auto" initial={{ opacity: 0, x: 10 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.25 }}>
-                      <p>This is incredible! Every message is stored on the blockchain. True decentralization! 💎</p>
-                      <p className="text-xs text-blue-100 mt-1">Onchain • Immutable</p>
+                      <p className="text-slate-100">This is incredible! Every message is stored on the blockchain. True decentralization! 💎</p>
+                      <p className="text-xs text-slate-200 mt-1">Onchain • Immutable</p>
                     </motion.div>
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-cyan-500"></div>
                   </div>
@@ -182,7 +182,7 @@ export default function Home() {
             <h2 className="text-4xl sm:text-5xl font-bold mb-4 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
               Why Choose Ambience?
             </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+            <p className="text-xl text-slate-700 dark:text-slate-300 max-w-2xl mx-auto">
               Built for those who value privacy, transparency, and true ownership of their data
             </p>
           </div>
@@ -226,7 +226,7 @@ export default function Home() {
               >
                 <div className="text-4xl mb-4">{feature.icon}</div>
                 <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-slate-100">{feature.title}</h3>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{feature.description}</p>
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -240,7 +240,7 @@ export default function Home() {
             <h2 className="text-4xl sm:text-5xl font-bold mb-4 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
               How It Works
             </h2>
-            <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+            <p className="text-xl text-slate-700 dark:text-slate-300 max-w-2xl mx-auto">
               Simple, secure, and decentralized messaging in three easy steps
             </p>
           </div>
@@ -269,7 +269,7 @@ export default function Home() {
                     {step.step}
                   </div>
                   <h3 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">{step.title}</h3>
-                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{step.description}</p>
+                  <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{step.description}</p>
                 </div>
                 {index < 2 && (
                   <div className="hidden md:block absolute top-8 left-full w-full h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 transform translate-x-4"></div>
@@ -287,7 +287,7 @@ export default function Home() {
             <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">
               Ready to Experience Decentralized Messaging?
             </h2>
-            <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
+            <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto">
               Join the future of communication. Connect your wallet and start chatting on the blockchain today.
             </p>
             <button
@@ -315,7 +315,7 @@ export default function Home() {
                 Ambience
               </span>
             </div>
-            <p className="text-slate-600 dark:text-slate-400 text-center md:text-right">
+            <p className="text-slate-700 dark:text-slate-300 text-center md:text-right">
               Built on Base Blockchain • Decentralized • Open Source
             </p>
           </div>
