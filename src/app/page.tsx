@@ -13,7 +13,11 @@ export default function Home() {
   return (
     <div className="min-h-[100dvh] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-950/80 border-b border-slate-200/50 dark:border-slate-800/50">
+      <nav
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-950/80 border-b border-slate-200/50 dark:border-slate-800/50"
+        role="navigation"
+        aria-label="Primary"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-2">
@@ -24,14 +28,14 @@ export default function Home() {
                 Ambience
               </span>
             </div>
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md">
+            <div className="hidden md:flex items-center space-x-8" role="menubar" aria-label="Primary navigation">
+              <a href="#features" role="menuitem" className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md">
                 Features
               </a>
-              <a href="#how-it-works" className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md">
+              <a href="#how-it-works" role="menuitem" className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md">
                 How It Works
               </a>
-              <Link href="/profile" className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md">
+              <Link href="/profile" role="menuitem" className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md">
                 Profile
               </Link>
               <ThemeToggle />
@@ -43,6 +47,7 @@ export default function Home() {
               <button
                 aria-label="Open menu"
                 aria-expanded={mobileOpen}
+                aria-controls="mobile-menu"
                 onClick={() => setMobileOpen((v) => !v)}
                 className="inline-flex items-center justify-center w-11 h-11 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 active:scale-95 transition"
               >
@@ -61,15 +66,15 @@ export default function Home() {
             </div>
           </div>
           {mobileOpen && (
-            <div className="md:hidden py-3 border-t border-slate-200 dark:border-slate-800">
+            <div className="md:hidden py-3 border-t border-slate-200 dark:border-slate-800" id="mobile-menu" role="menu" aria-label="Mobile navigation">
               <div className="flex flex-col gap-2 py-2">
-                <a href="#features" className="px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <a href="#features" role="menuitem" className="px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
                   Features
                 </a>
-                <a href="#how-it-works" className="px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <a href="#how-it-works" role="menuitem" className="px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
                   How It Works
                 </a>
-                <Link href="/profile" className="px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
+                <Link href="/profile" role="menuitem" className="px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
                   Profile
                 </Link>
               </div>
@@ -327,10 +332,15 @@ export default function Home() {
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm"
           onClick={() => setShowComingSoon(false)}
+          aria-hidden="false"
         >
           <div
             className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 max-w-md mx-4 border border-slate-200 dark:border-slate-700"
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="coming-soon-title"
+            aria-describedby="coming-soon-desc"
           >
             <div className="text-center">
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -338,10 +348,10 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">
+              <h3 id="coming-soon-title" className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">
                 Coming Soon!
               </h3>
-              <p className="text-slate-600 dark:text-slate-400 mb-6">
+              <p id="coming-soon-desc" className="text-slate-600 dark:text-slate-400 mb-6">
                 The chat feature is currently under development. We're working hard to bring you the best decentralized messaging experience. Stay tuned!
               </p>
               <button

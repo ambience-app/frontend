@@ -173,6 +173,7 @@ export default function WalletConnect() {
     return (
       <button
         onClick={handleConnect}
+        aria-label="Connect wallet"
         className="px-6 py-2 flex items-center gap-2 rounded-full font-medium text-white transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-lg hover:scale-105"
       >
         <>
@@ -187,6 +188,9 @@ export default function WalletConnect() {
     <div className="relative" data-wallet-dropdown>
       <button
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+        aria-haspopup="menu"
+        aria-expanded={isDropdownOpen}
+        aria-controls="wallet-menu"
         className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-full px-4 py-2 hover:shadow-lg transition-all duration-200 border border-slate-200 dark:border-slate-700"
       >
         <span className="font-medium text-sm">{truncateAddress(address)}</span>
@@ -197,6 +201,8 @@ export default function WalletConnect() {
       <AnimatePresence>
         {isDropdownOpen && (
           <motion.div
+            id="wallet-menu"
+            role="menu"
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
@@ -216,9 +222,11 @@ export default function WalletConnect() {
                 </div>
               </div>
             </div>
-            <div className="p-2">
+            <div className="p-2" role="none">
               <button
                 onClick={handleCopyAddress}
+                role="menuitem"
+                aria-label="Copy wallet address"
                 className="w-full flex items-center gap-3 px-3 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-sm transition-colors"
               >
                 {copied ? (
@@ -237,6 +245,8 @@ export default function WalletConnect() {
                 href={`https://basescan.org/address/${address}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                role="menuitem"
+                aria-label="View address on BaseScan"
                 className="flex items-center gap-3 px-3 py-2 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-sm transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -246,6 +256,8 @@ export default function WalletConnect() {
               </a>
               <button
                 onClick={handleDisconnect}
+                role="menuitem"
+                aria-label="Disconnect wallet"
                 className="w-full flex items-center gap-3 px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm transition-colors mt-1"
               >
                 <LogOut className="w-4 h-4" />

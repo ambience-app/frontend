@@ -117,7 +117,11 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-950/80 border-b border-slate-200/50 dark:border-slate-800/50">
+      <nav
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-950/80 border-b border-slate-200/50 dark:border-slate-800/50"
+        role="navigation"
+        aria-label="Secondary"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center space-x-2">
@@ -179,6 +183,7 @@ export default function ProfilePage() {
                     </span>
                     <button
                       onClick={handleCopyAddress}
+                      aria-label="Copy wallet address"
                       className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {copied ? (
@@ -318,6 +323,8 @@ export default function ProfilePage() {
                         <button
                           key={theme.value}
                           onClick={() => setSelectedTheme(theme.value)}
+                          aria-pressed={selectedTheme === theme.value}
+                          aria-label={`Select ${theme.name} theme`}
                           className={`p-3 rounded-lg border-2 transition-all ${
                             selectedTheme === theme.value
                               ? "border-slate-900 dark:border-slate-100"
@@ -361,6 +368,9 @@ export default function ProfilePage() {
                     </div>
                     <button
                       onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+                      role="switch"
+                      aria-checked={notificationsEnabled}
+                      aria-label="Toggle notifications"
                       className={`relative w-12 h-6 rounded-full transition-colors ${
                         notificationsEnabled
                           ? "bg-green-500"
@@ -390,6 +400,9 @@ export default function ProfilePage() {
                     </div>
                     <button
                       onClick={handleThemeToggle}
+                      role="switch"
+                      aria-checked={darkMode}
+                      aria-label="Toggle dark mode"
                       className={`relative w-12 h-6 rounded-full transition-colors ${
                         darkMode
                           ? "bg-indigo-500"
