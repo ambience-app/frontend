@@ -60,4 +60,63 @@ export function useContract() {
     }
   };
 
-  
+  const joinRoom = async (roomId: number) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const hash = await writeContractAsync({
+        address: CONTRACT_ADDRESS as Address,
+        abi: CONTRACT_ABI,
+        functionName: "joinRoom",
+        args: [roomId],
+      });
+
+      return await waitForReceipt(hash);
+    } catch (err) {
+      console.error("Join room failed:", err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ---------------------------
+  // Write: Send a Message
+  // ---------------------------
+  const sendMessage = async (roomId: number, content: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const hash = await writeContractAsync({
+        address: CONTRACT_ADDRESS as Address,
+        abi: CONTRACT_ABI,
+        functionName: "sendMessage",
+        args: [roomId, content],
+      });
+
+      return await waitForReceipt(hash);
+    } catch (err) {
+      console.error("Send message error:", err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    // state
+    loading,
+    error,
+    isConnected,
+
+    // read
+    getMessages,
+
+    // writes
+    createRoom,
+    joinRoom,
+    sendMessage,
+  };
+}
