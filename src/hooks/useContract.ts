@@ -5,6 +5,23 @@ import { Address } from "viem";
 import CONTRACT_ABI from "@/contracts/Messaging.json";
 import { CONTRACT_ADDRESS } from "@/config/contracts"; // ensure you export address
 
+
+/**
+ * useContract hook
+ *
+ * A hook that provides a simplified interface for interacting with the messaging smart contract on Base blockchain.
+ * It handles reading from and writing to the contract, managing transaction states, and managing contract interactions.
+ *
+ * @returns {Object} An object with functions to read and write to the contract, and the current connection state.
+ * @property {boolean} loading - Whether a transaction is in progress.
+ * @property {unknown} error - The error object if a transaction fails.
+ * @property {boolean} isConnected - Whether the user is connected to the blockchain.
+ * @property {function} getMessages - A function to get messages from a room.
+ * @property {function} createRoom - A function to create a new room.
+ * @property {function} joinRoom - A function to join a room.
+ * @property {function} sendMessage - A function to send a message to a room.
+ */
+
 export function useContract() {
   const { address: userAddress, isConnected } = useAccount();
 
