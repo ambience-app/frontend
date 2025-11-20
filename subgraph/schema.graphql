@@ -1,0 +1,26 @@
+type Message @entity {
+  id: ID!
+  sender: Bytes! # address
+  content: String!
+  timestamp: BigInt!
+  roomId: String!
+  transactionHash: Bytes!
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+}
+
+type Room @entity {
+  id: ID!
+  messageCount: BigInt!
+  messages: [Message!]! @derivedFrom(field: "roomId")
+  lastMessage: Message
+  createdAt: BigInt!
+  updatedAt: BigInt!
+}
+
+type User @entity {
+  id: ID! # User address
+  messageCount: BigInt!
+  messages: [Message!]! @derivedFrom(field: "sender")
+  rooms: [Room!]! @derivedFrom(field: "id")
+}
