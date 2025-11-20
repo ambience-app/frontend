@@ -2,6 +2,22 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 import { Address, Room, User } from '@/types';
 
+/**
+ * useRoomPermissions hook
+ *
+ * A hook that provides room permissions functionality.
+ * It allows checking if a user has a specific permission,
+ * and adding/removing members from the room.
+ *
+ * @returns {Object} An object with functions to check if a user has a specific permission, and add/remove members from the room.
+ * @property {function} hasPermission - A function to check if a user has a specific permission.
+ * @property {function} can - A function to check if the current user has a specific permission.
+ * @property {function} addMember - A function to add a member to the room.
+ * @property {function} removeMember - A function to remove a member from the room.
+ * @property {function} updateMemberRole - A function to update a member's role.
+ * @property {function} getMember - A function to get a member by address.
+ * @property {function} getMembersByRole - A function to get all members with a specific role.
+ */
 type Permission = 
   | 'send_messages'
   | 'manage_messages'

@@ -89,6 +89,22 @@ async function fetchBlock(provider: ethers.Provider, blockNumber: number): Promi
   return blockData;
 }
 
+/**
+ * useBlockchainSync hook
+ *
+ * A hook that provides blockchain synchronization functionality.
+ * It allows fetching data from the blockchain and handling new blocks.
+ *
+ * @param {Object} props - Component props.
+ * @param {number} props.pollInterval - The interval in milliseconds to check for new blocks.
+ * @param {number} props.staleBlockCount - The number of blocks to wait before considering data stale.
+ * @param {number} props.maxBlocksPerUpdate - The maximum number of blocks to process in a single update.
+ * @param {(block: Block) => Promise<void> | void} props.onBlock - The callback to handle new blocks.
+ * @param {(blockNumber: number) => Promise<T>} props.fetchData - The callback to fetch data from the blockchain.
+ * @param {(currentBlock: Block, oldBlock: Block) => Promise<boolean>} props.onReorg - The callback to handle chain reorgs.
+ * @returns {Object} An object with functions to fetch data and handle new blocks.
+ */
+
 export function useBlockchainSync<T>({
   pollInterval = 5000,
   staleBlockCount = 5,

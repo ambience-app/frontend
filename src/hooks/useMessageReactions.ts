@@ -1,7 +1,24 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAccount } from '@reown/appkit/react';
 
+/**
+ * useMessageReactions hook
+ *
+ * A hook that provides message reaction functionality.
+ * It allows toggling reactions on messages, checking if the current user has reacted,
+ * and getting all reactions for a specific message.
+ *
+ * @returns {Object} An object with functions to toggle reactions, check if the current user has reacted, and get all reactions for a specific message.
+ * @property {function} toggleReaction - A function to toggle a reaction on a message.
+ * @property {function} hasReacted - A function to check if the current user has reacted with a specific reaction.
+ * @property {function} getMessageReactions - A function to get all reactions for a specific message.
+ * @property {MessageReactions} reactions - The current reactions.
+ * @property {boolean} isLoading - Whether the reactions are loading.
+ * @property {Error | null} error - The error object if the reactions fail to load.
+ */
+
 type Reaction = {
+  
   id: string;
   emoji: string;
   count: number;

@@ -1,6 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAccount } from 'wagmi';
 
+/**
+ * useNotifications hook
+ *
+ * A hook that provides notification functionality.
+ * It allows displaying notifications to the user, managing notification preferences,
+ * and managing notification badge.
+ *
+ * @returns {Object} An object with functions to display notifications, manage notification preferences, and manage notification badge.
+ */
 interface NotificationPreferences {
   pushEnabled: boolean;
   soundEnabled: boolean;

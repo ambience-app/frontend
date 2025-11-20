@@ -41,6 +41,25 @@ const BLOCK_TIMES = {
   celo: 5,
 } as const;
 
+/**
+ * useGasEstimation hook
+ *
+ * A hook that provides gas estimation functionality.
+ * It allows estimating gas for a transaction, getting suggested gas settings,
+ * and formatting gas prices.
+ *
+ * @returns {Object} An object with functions to estimate gas, get suggested gas settings, get fee data, format gas price, parse gas price, and the current network.
+ * @property {GasSettings | null} gasSettings - The current gas settings.
+ * @property {boolean} isLoading - Whether the gas estimation is loading.
+ * @property {Error | null} error - The error object if the gas estimation fails.
+ * @property {function} estimateGas - A function to estimate gas for a transaction.
+ * @property {function} getSuggestedGasSettings - A function to get suggested gas settings.
+ * @property {function} getFeeData - A function to get fee data.
+ * @property {function} formatGwei - A function to format a gas price in gwei.
+ * @property {function} parseGwei - A function to parse a gwei string to a BigNumber.
+ * @property {keyof typeof BLOCK_TIMES} network - The current network.
+ */
+
 export function useGasEstimation() {
   const provider = useProvider();
   const [isLoading, setIsLoading] = useState<boolean>(false);

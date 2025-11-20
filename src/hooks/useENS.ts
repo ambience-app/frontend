@@ -27,6 +27,23 @@ const cleanCache = () => {
   });
 };
 
+
+/**
+ * useENS hook
+ *
+ * A hook that provides ENS resolution functionality.
+ * It allows resolving ENS names to addresses and vice versa,
+ * and getting ENS avatar information.
+ *
+ * @returns {Object} An object with functions to resolve ENS names, lookup addresses, get ENS avatar, and get ENS data.
+ * @property {function} resolveName - A function to resolve an ENS name to an address.
+ * @property {function} lookupAddress - A function to lookup an address to an ENS name.
+ * @property {function} getAvatar - A function to get an ENS avatar.
+ * @property {function} getENSData - A function to get all ENS data for an address.
+ * @property {boolean} isLoading - Whether the ENS data is loading.
+ * @property {Error | null} error - The error object if the ENS data fails to load.
+ */
+
 export function useENS() {
   const provider = useProvider();
   const [isLoading, setIsLoading] = useState<boolean>(false);

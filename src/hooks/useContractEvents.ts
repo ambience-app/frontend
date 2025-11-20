@@ -19,6 +19,22 @@ interface UseContractEventsOptions {
   reconnectInterval?: number;
 }
 
+/**
+ * useContractEvents hook
+ *
+ * A hook that provides a simplified interface for subscribing to events from the messaging smart contract on Base blockchain.
+ * It handles subscribing to events, handling event data, and managing event subscriptions.
+ *
+ * @returns {Object} An object with functions to unsubscribe from events, and the current connection state.
+ * @param {string} eventName - The name of the event to subscribe to.
+ * @param {EventHandler<T>} handler - The callback to handle the event.
+ * @param {UseContractEventsOptions} options - The options for the event subscription.
+ * @property {function} unsubscribe - A function to unsubscribe from events.
+ * @property {boolean} isSubscribed - Whether the user is subscribed to events.
+ * @property {string} contractAddress - The address of the contract.
+ * @property {string} connectedAddress - The address of the connected user.
+ */
+
 export function useContractEvents<T = any>(
   eventName: string,
   handler: EventHandler<T>,

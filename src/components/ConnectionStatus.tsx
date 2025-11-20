@@ -5,6 +5,22 @@ import { Wifi, WifiOff, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+/**
+ * ConnectionStatus component
+ *
+ * Displays real-time WebSocket connection status to the user.
+ * It shows different UI states based on whether the app is:
+ * - Connected
+ * - Connecting
+ * - Disconnected with an error
+ *
+ * Provides a "Reconnect" button when the WebSocket connection fails,
+ * including a loading state while attempting reconnection.
+ *
+ * @component
+ * @returns {JSX.Element} Visual connection indicator with tooltips and optional reconnect action.
+ */
+
 export function ConnectionStatus() {
   const { isConnected, error, reconnect } = useWebSocket();
   const [isReconnecting, setIsReconnecting] = useState(false);

@@ -4,6 +4,31 @@ import React, { Component, ReactNode } from "react";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import Link from "next/link";
 
+/**
+ * ErrorBoundary component
+ *
+ * A React class component that catches runtime errors in the component tree
+ * below it, preventing the entire application from crashing. When an error
+ * occurs, it displays a fallback UI and optionally triggers an `onError` callback.
+ *
+ * Features:
+ * - Captures rendering, lifecycle, and constructor errors in child components
+ * - Displays a customizable fallback UI when an error is caught
+ * - Supports automatic reset when `resetKeys` or props change
+ * - Allows external error logging via the `onError` callback
+ *
+ * @extends React.Component<ErrorBoundaryProps, ErrorBoundaryState>
+ *
+ * @prop {React.ReactNode} children - The wrapped components that the boundary monitors.
+ * @prop {React.ReactNode} [fallback] - Optional fallback UI to display when an error is caught.
+ * @prop {(error: Error, errorInfo: React.ErrorInfo) => void} [onError] - Optional error handler for logging/reporting.
+ * @prop {Array<string | number>} [resetKeys] - Keys that trigger boundary reset when changed.
+ * @prop {boolean} [resetOnPropsChange=false] - Automatically reset boundary when props change.
+ *
+ * @returns {JSX.Element} Renders children when no error is present or the fallback UI when an error is caught.
+ */
+
+
 interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;

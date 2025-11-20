@@ -26,13 +26,22 @@ interface SearchResult {
 const DEFAULT_PAGE_SIZE = 20;
 
 /**
+ * useMessageSearch hook
+ *
  * A hook for searching and filtering messages with pagination support.
+ * It allows searching messages based on various criteria, and paginating the results.
+ *
+ * @returns {Object} An object with functions to search messages, paginate results, and get search results.
+ * @property {function} searchMessages - A function to search messages.
+ * @property {function} paginateResults - A function to paginate the results.
+ * @property {function} getSearchResults - A function to get the search results.
  * 
- * @param messages - Array of messages to search through
- * @param options - Search configuration
- * @param pageSize - Number of messages per page (default: 20)
- * @returns Search results and pagination controls
+ * @param {Message[]} messages - Array of messages to search through
+ * @param {SearchOptions} options - Search configuration
+ * @param {number} pageSize - Number of messages per page (default: 20)
+ * @returns {SearchResult} Search results and pagination controls
  */
+
 const useMessageSearch = (
   messages: Message[],
   options: SearchOptions,

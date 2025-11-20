@@ -8,6 +8,16 @@ import { Wallet, ChevronDown, LogOut, Copy, Check } from "lucide-react";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 
+/**
+ * WalletConnect component
+ *
+ * A component that displays a wallet connection button and dropdown menu.
+ * It uses the AppKit and Wagmi libraries to manage wallet connections.
+ *
+ * @component
+ * @returns {JSX.Element} A wallet connection button and dropdown menu.
+ */
+
 export default function WalletConnect() {
   const [mounted, setMounted] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);

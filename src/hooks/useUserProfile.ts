@@ -32,6 +32,26 @@ const cleanProfileCache = () => {
   }
 };
 
+/**
+ * useUserProfile hook
+ *
+ * A hook that provides user profile functionality.
+ * It allows fetching user profile data from the blockchain and IPFS,
+ * and updating the user profile.
+ *
+ * @returns {Object} An object with functions to fetch user profile data, update user profile, and refresh user profile.
+ * @property {Profile | null} profile - The current user profile.
+ * @property {boolean} isLoading - Whether the profile is loading.
+ * @property {Error | null} error - The error object if the profile fails to load.
+ * @property {boolean} isOwner - Whether the current user is the profile owner.
+ * @property {function} updateProfile - A function to update the user profile.
+ * @property {function} refreshProfile - A function to refresh the user profile.
+ */
+
+type UseUserProfileProps = {
+  addressOrName?: string | null;
+};
+
 export function useUserProfile(addressOrName?: string | null) {
   const { address: connectedAddress } = useAccount();
   const publicClient = usePublicClient();

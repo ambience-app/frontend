@@ -5,6 +5,23 @@ import { toast } from 'sonner';
 import { Address } from 'viem';
 import { formatAddress } from '@/lib/utils';
 
+/**
+ * TransactionToast component
+ *
+ * Displays a toast notification for blockchain transactions,
+ * showing different statuses and providing a way to dismiss the toast.
+ *
+ * @component
+ * @param {TransactionToastProps} props - Component props.
+ * @param {TransactionStatus} props.status - The current status of the transaction.
+ * @param {Address} [props.hash] - The transaction hash.
+ * @param {string} [props.message] - The message to display.
+ * @param {string} [props.description] - The description to display.
+ * @param {() => void} [props.onDismiss] - The function to call when the toast is dismissed.
+ * @param {string} [props.className] - The class name to apply to the toast.
+ * @returns {JSX.Element} A toast notification for blockchain transactions.
+ */
+
 type TransactionStatus = 'pending' | 'success' | 'error' | 'confirming';
 
 interface TransactionToastProps {
