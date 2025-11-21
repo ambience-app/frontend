@@ -6,3 +6,4 @@ export * from './room';
 export * from './user';
 export * from './contract';
 export * from './api';
+export * from './transaction';

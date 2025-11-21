@@ -1,0 +1,26 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: AmbienceChat
+    network: celo
+    source:
+      address: "0x23cdaec75b1c3e5d26db4675ecb3c9042a780a0e"
+      abi: AmbienceChat
+      startBlock: 1234567  # Replace with the actual deployment block
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Message
+        - Room
+        - User
+      abis:
+        - name: AmbienceChat
+          file: ./abis/AmbienceChat.json
+      eventHandlers:
+        - event: MessageSent(indexed address,string,string,uint256)
+          handler: handleMessageSent
+      file: ./src/mapping.ts
