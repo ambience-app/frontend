@@ -5,7 +5,7 @@ import { useProfile } from "@/hooks/useProfile";
 export function ProfileView({ userAddress }) {
   const { profile } = useProfile(userAddress);
 
-  if (!profile) return <p>No profile found.</p>;
+  if (!profile) return <p> No profile found for this user.</p>;
 
   return (
     <div className="flex gap-4 items-center">
