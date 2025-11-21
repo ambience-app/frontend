@@ -1,5 +1,5 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+# #!/usr/bin/env sh
+# . "$(dirname -- "$0")/_/husky.sh"
 
 # Basic Conventional Commits check (type: scope optional: subject)
 # Examples: feat: add new feature | fix(ui): correct button color
