@@ -11,11 +11,11 @@ import {
   usernameSchema,
   bioSchema,
   messageSchema 
-} from '@/lib/validation/user';
-import { rateLimiter, createRateLimitedFunction } from '@/utils/rateLimiter';
-import { createSafeError, ErrorCategory } from '@/lib/security/errors';
-import { ContractValidator } from '@/lib/security/contracts';
-import { sanitizeMessage } from '@/lib/sanitize';
+} from '../lib/validation/user';
+import { rateLimiter, createRateLimitedFunction } from '../utils/rateLimiter';
+import { createSafeError, ErrorCategory } from '../lib/security/errors';
+import { ContractValidator } from '../lib/security/contracts';
+import { sanitizeMessage } from '../lib/sanitize';
 
 // Mock rate limiter for tests
 const mockRateLimiter = {
