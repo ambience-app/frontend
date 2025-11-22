@@ -35,8 +35,8 @@ const metadata = {
   ],
 };
 
-// Log environment info for debugging
-if (typeof window !== 'undefined') {
+// Log environment info for debugging (development only)
+if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
   console.log(`🌍 AppKit Environment: ${isMainnet ? 'Mainnet' : 'Testnet'}`);
   console.log(
     `📡 Supported Networks:`,
