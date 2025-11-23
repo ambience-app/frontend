@@ -7,6 +7,7 @@ import { useAccount, useDisconnect as useWagmiDisconnect } from "wagmi";
 import { Wallet, ChevronDown, LogOut, Copy, Check } from "lucide-react";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import useNameService from "@/hooks/useNameService";
 
 /**
  * WalletConnect component
@@ -22,8 +23,13 @@ export default function WalletConnect() {
   const [mounted, setMounted] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false); // 🟢 NEW: Loading state
-  const [isDisconnecting, setIsDisconnecting] = useState(false); // optional future UX polish
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [avatar, setAvatar] = useState<string | null>(null);
+  
+  // Name service hook
+  const { lookupAddress } = useNameService();
 
   // AppKit hooks
   const { address: appkitAddress, isConnected: appkitIsConnected } = useAppKitAccount();
@@ -37,6 +43,22 @@ export default function WalletConnect() {
 
   const address = appkitAddress || wagmiAddress;
   const isConnected = appkitIsConnected || wagmiIsConnected;
+
+  // Update display name when address changes
+  useEffect(() => {
+    const updateDisplayInfo = async () => {
+      if (address) {
+        const { name, avatar } = await lookupAddress(address);
+        setDisplayName(name || truncateAddress(address));
+        setAvatar(avatar);
+      } else {
+        setDisplayName(null);
+        setAvatar(null);
+      }
+    };
+    
+    updateDisplayInfo();
+  }, [address, lookupAddress]);
 
   useEffect(() => setMounted(true), []);
 
@@ -219,9 +241,20 @@ export default function WalletConnect() {
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         className="flex items-center gap-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-full px-4 py-2 hover:shadow-lg transition-all duration-200 border border-slate-200 dark:border-slate-700"
       >
-        <span className="font-medium text-sm">{truncateAddress(address)}</span>
-        <div className="flex items-center">{getWalletIcon()}</div>
-        <ChevronDown className="w-4 h-4" />
+        <span className="font-medium text-sm">{displayName}</span>
+        {avatar ? (
+          <img 
+            src={avatar} 
+            alt="Profile" 
+            className="w-5 h-5 rounded-full ml-2"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        ) : (
+          <div className="flex items-center ml-2">{getWalletIcon()}</div>
+        )}
+        <ChevronDown className="w-4 h-4 ml-1" />
       </button>
 
       {isDropdownOpen && (
@@ -234,7 +267,7 @@ export default function WalletConnect() {
                   {getWalletName()}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  {truncateAddress(address)}
+                  {address}
                 </p>
               </div>
             </div>
