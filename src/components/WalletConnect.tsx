@@ -141,13 +141,23 @@ export default function WalletConnect() {
   // Handle click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (!(event.target as Element).closest("[data-wallet-dropdown]")) {
+      const target = event.target as Element;
+      const dropdown = document.querySelector('[data-wallet-dropdown]');
+      
+      // Check if click is outside the dropdown and the dropdown is open
+      if (dropdown && !dropdown.contains(target) && isDropdownOpen) {
         setIsDropdownOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+
+    // Use capture phase to catch events before they bubble up
+    document.addEventListener('mousedown', handleClickOutside, true);
+    
+    // Cleanup function to remove the event listener
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside, true);
+    };
+  }, [isDropdownOpen]); // Add isDropdownOpen to dependency array
 
   if (!mounted) {
     return (
