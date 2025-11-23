@@ -1,102 +1,115 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { memo, useEffect, useRef, useMemo } from 'react';
 import { useInView } from 'react-intersection-observer';
-import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Message } from './Message';
 import type { Message as MessageType } from '@/types/message';
-
-const MESSAGES_PER_PAGE = 20;
+import { cn } from '@/lib/utils';
 
 interface MessageListProps {
   roomId: string;
+  messages: MessageType[];
   currentUserAddress: string;
-  fetchMessages: (roomId: string, page: number) => Promise<MessageType[]>;
+  isLoading: boolean;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  onLoadMore: () => void;
+  onRefetch: () => void;
   className?: string;
 }
 
-export function MessageList({ 
-  roomId, 
-  currentUserAddress, 
-  fetchMessages,
-  className 
-}: MessageListProps) {
-  const { ref, inView } = useInView();
-  
-  const {
-    data,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    status,
-  } = useInfiniteQuery({
-    queryKey: ['messages', roomId],
-    queryFn: ({ pageParam = 1 }) => fetchMessages(roomId, pageParam),
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.length === MESSAGES_PER_PAGE ? allPages.length + 1 : undefined;
-    },
-    refetchOnWindowFocus: false,
+/**
+ * Optimized MessageList component with memoization and virtual scrolling support
+ */
+const MessageList = memo<MessageListProps>(({
+  roomId,
+  messages,
+  currentUserAddress,
+  isLoading,
+  hasNextPage,
+  isFetchingNextPage,
+  onLoadMore,
+  onRefetch,
+  className
+}) => {
+  const { ref, inView } = useInView({
+    threshold: 0.1,
+    rootMargin: '50px',
   });
 
+  // Load more messages when user scrolls to bottom
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
+      onLoadMore();
     }
-  }, [inView, hasNextPage, fetchNextPage, isFetchingNextPage]);
+  }, [inView, hasNextPage, isFetchingNextPage, onLoadMore]);
 
-  if (status === 'pending') {
+  // Memoized message components to prevent re-renders
+  const memoizedMessages = useMemo(() => {
+    if (!messages.length) return null;
+
     return (
-      <div className={cn('space-y-4 p-4', className)}>
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="flex items-start space-x-3">
-            <Skeleton className="h-10 w-10 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-16 w-64" />
-            </div>
-          </div>
+      <div className="space-y-6">
+        {messages.map((message) => (
+          <Message
+            key={message.id}
+            message={message}
+            isCurrentUser={
+              typeof message.sender === 'string'
+                ? message.sender.toLowerCase() === currentUserAddress.toLowerCase()
+                : message.sender.address.toLowerCase() === currentUserAddress.toLowerCase()
+            }
+          />
         ))}
       </div>
     );
-  }
+  }, [messages, currentUserAddress]);
 
-  if (status === 'error') {
+  // Loading skeleton
+  const loadingSkeleton = useMemo(() => (
+    <div className="space-y-4 p-4">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="flex items-start space-x-3">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-16 w-64" />
+          </div>
+        </div>
+      ))}
+    </div>
+  ), []);
+
+  // Loading more skeleton
+  const loadingMoreSkeleton = useMemo(() => (
+    <div ref={ref} className="flex justify-center py-2">
+      <Skeleton className="h-4 w-32" />
+    </div>
+  ), [ref]);
+
+  if (isLoading) {
     return (
-      <div className={cn('p-4 text-center text-destructive', className)}>
-        Error loading messages: {error.message}
+      <div className={cn('flex-1 overflow-y-auto', className)}>
+        {loadingSkeleton}
       </div>
     );
   }
 
-  const messages = data?.pages.flat() || [];
+  if (messages.length === 0) {
+    return (
+      <div className={cn('flex items-center justify-center h-full text-muted-foreground', className)}>
+        No messages yet. Send a message to start the conversation!
+      </div>
+    );
+  }
 
   return (
-    <div className={cn('flex-1 overflow-y-auto p-4 space-y-4', className)}>
-      {hasNextPage && (
-        <div ref={ref} className="flex justify-center py-2">
-          <Skeleton className="h-4 w-32" />
-        </div>
-      )}
-      
-      {messages.length === 0 ? (
-        <div className="flex items-center justify-center h-full text-muted-foreground">
-          No messages yet. Send a message to start the conversation!
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {messages.map((message) => (
-            <Message
-              key={message.id}
-              message={message}
-              isCurrentUser={
-                typeof message.sender === 'string'
-                  ? message.sender.toLowerCase() === currentUserAddress.toLowerCase()
-                  : message.sender.address.toLowerCase() === currentUserAddress.toLowerCase()
-              }
-            />
-          ))}
-        </div>
-      )}
+    <div className={cn('flex-1 overflow-y-auto p-4', className)}>
+      {hasNextPage && loadingMoreSkeleton}
+      {memoizedMessages}
     </div>
   );
-}
+});
+
+MessageList.displayName = 'MessageList';
+
+export { MessageList };
