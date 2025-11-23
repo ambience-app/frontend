@@ -1,6 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Address, isAddress } from 'viem';
 import { usePublicClient } from 'wagmi';
+
+type BasenameResult = {
+  name: string | null;
+  address: Address | null;
+  timestamp: number;
+};
 
 // Base Name Service contract addresses (mainnet and testnet)
 const BASENAME_REGISTRY = {
@@ -28,13 +34,7 @@ const BASENAME_ABI = [
   },
 ] as const;
 
-type BasenameCache = {
-  [key: string]: {
-    name?: string | null;
-    address?: Address | null;
-    timestamp: number;
-  };
-};
+type BasenameCache = Record<string, BasenameResult>;
 
 // Cache TTL in milliseconds (5 minutes)
 const CACHE_TTL = 5 * 60 * 1000;
@@ -67,11 +67,12 @@ export function useBasename() {
   const resolveName = useCallback(
     async (name: string): Promise<Address | null> => {
       const registry = getBasenameRegistry();
-      if (!publicClient || !registry) return null;
+      if (!publicClient || !registry || !name) return null;
 
       const cacheKey = `name:${name.toLowerCase()}`;
-      if (cache[cacheKey] && Date.now() - cache[cacheKey].timestamp < CACHE_TTL) {
-        return cache[cacheKey].address || null;
+      const cached = cache[cacheKey];
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return cached.address;
       }
 
       try {
@@ -112,8 +113,9 @@ export function useBasename() {
       if (!publicClient || !registry || !isAddress(address)) return null;
 
       const cacheKey = `address:${address.toLowerCase()}`;
-      if (cache[cacheKey] && Date.now() - cache[cacheKey].timestamp < CACHE_TTL) {
-        return cache[cacheKey].name || null;
+      const cached = cache[cacheKey];
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return cached.name;
       }
 
       try {

@@ -1,7 +1,15 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import { Address, isAddress } from 'viem';
 import useENS from './useENS';
 import useBasename from './useBasename';
+
+type NameServiceResult = {
+  name: string | null;
+  address: string | null;
+  avatar: string | null;
+  isENS: boolean;
+  isBasename: boolean;
+};
 
 type NameServiceResult = {
   name: string | null;
@@ -21,6 +29,12 @@ export function useNameService() {
   const resolveName = useCallback(
     async (name: string): Promise<NameServiceResult> => {
       if (!name) return { name: null, address: null, avatar: null, isENS: false, isBasename: false };
+      
+      // If it's already an address, just format it
+      if (isAddress(name)) {
+        const result = await lookupAddress(name);
+        return result;
+      }
 
       try {
         setIsLoading(true);
@@ -70,6 +84,9 @@ export function useNameService() {
       if (!address || !isAddress(address)) {
         return { name: null, address: null, avatar: null, isENS: false, isBasename: false };
       }
+      
+      // Ensure address is checksummed for consistent caching
+      address = address as Address;
 
       try {
         setIsLoading(true);
@@ -117,12 +134,25 @@ export function useNameService() {
   // Format address with optional ENS/Basename
   const formatAddress = useCallback(
     async (address: string, truncate = true): Promise<string> => {
-      if (!address || !isAddress(address)) return address;
+      if (!address) return '';
       
-      const { name } = await lookupAddress(address);
-      if (name) return name;
+      // If it's a valid address, try to resolve it
+      if (isAddress(address)) {
+        const { name } = await lookupAddress(address);
+        if (name) return name;
+        return truncate ? `${address.slice(0, 6)}...${address.slice(-4)}` : address;
+      }
       
-      return truncate ? `${address.slice(0, 6)}...${address.slice(-4)}` : address;
+      // If it's not an address but might be a name, try to resolve it
+      try {
+        const result = await resolveName(address);
+        if (result.name) return result.name;
+      } catch (e) {
+        console.error('Error resolving name:', e);
+      }
+      
+      // Return as is if resolution fails
+      return address;
     },
     [lookupAddress]
   );
