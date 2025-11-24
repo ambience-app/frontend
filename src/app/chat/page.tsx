@@ -2,23 +2,27 @@
 
 import { useAppKitAccount } from "@reown/appkit/react";
 import { useAccount, useEnsName } from "wagmi";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
-import { Send, Hash, User, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Send, Hash, User, Loader2, AlertCircle } from "lucide-react";
 import { mainnet } from "wagmi/chains";
+import { formatDistanceToNow } from "date-fns";
+import { useChat } from "@/hooks/useChat";
+import { truncateAddress } from "@/lib/utils";
 
 interface Message {
-  id: number;
+  id: string;
   content: string;
   sender: string;
-  ensName?: string;
-  timestamp: Date;
-  txHash: string;
+  timestamp: number;
+  roomId: string;
 }
 
 export default function ChatPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const roomId = searchParams.get('room') || '1'; // Default to room 1 if not specified
 
   // Using REOWN AppKit hooks
   const { address: appkitAddress, isConnected: appkitIsConnected } = useAppKitAccount();
@@ -30,19 +34,18 @@ export default function ChatPage() {
   const address = appkitAddress || wagmiAddress;
   const isConnected = appkitIsConnected || wagmiIsConnected;
 
+  // Use the chat hook for message handling
+  const { messages, isSending, isLoading, error, sendMessage } = useChat(roomId);
+  
+  const [messageInput, setMessageInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
   // ENS resolution for current user
   const { data: ensName } = useEnsName({
     address: address as `0x${string}` | undefined,
     chainId: mainnet.id,
   });
-
-  const [mounted, setMounted] = useState(false);
-  const [messageInput, setMessageInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesPerPage = 20;
 
   useEffect(() => {
     setMounted(true);
@@ -55,49 +58,38 @@ export default function ChatPage() {
     }
   }, [mounted, isConnected, router]);
 
-  // Mock messages for demonstration
-  useEffect(() => {
-    if (isConnected) {
-      // Simulate loading messages
-      const mockMessages: Message[] = Array.from({ length: 50 }, (_, i) => ({
-        id: i + 1,
-        content: i % 5 === 0
-          ? "This is a longer message to demonstrate how the chat handles different message lengths. It should wrap nicely and maintain good readability."
-          : i % 3 === 0
-          ? "GM! ☀️"
-          : `Message ${i + 1}`,
-        sender: i % 2 === 0 ? (address as string) : `0x${Math.random().toString(16).substring(2, 42)}`,
-        ensName: i % 4 === 0 ? "vitalik.eth" : undefined,
-        timestamp: new Date(Date.now() - i * 1000 * 60 * 5),
-        txHash: `0x${Math.random().toString(16).substring(2, 66)}`,
-      }));
-      setMessages(mockMessages);
-    }
-  }, [isConnected, address]);
-
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Real-time message updates simulation
-  useEffect(() => {
-    if (!isConnected) return;
+  // Handle sending a new message
+  const handleSendMessage = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageInput.trim() || !isConnected || isSending) return;
+    
+    try {
+      await sendMessage(messageInput);
+      setMessageInput("");
+    } catch (error) {
+      console.error("Failed to send message:", error);
+    }
+  }, [messageInput, isConnected, isSending, sendMessage]);
 
-    const interval = setInterval(() => {
-      // Simulate new message every 30 seconds
-      const newMessage: Message = {
-        id: messages.length + 1,
-        content: "New message from the blockchain! 🚀",
-        sender: `0x${Math.random().toString(16).substring(2, 42)}`,
-        timestamp: new Date(),
-        txHash: `0x${Math.random().toString(16).substring(2, 66)}`,
-      };
-      setMessages((prev) => [...prev, newMessage]);
-    }, 30000);
+  // Format message timestamp
+  const formatTimestamp = (timestamp: number) => {
+    try {
+      return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+    } catch {
+      return '';
+    }
+  };
 
-    return () => clearInterval(interval);
-  }, [isConnected, messages.length]);
+  // Truncate long messages
+  const truncateMessage = (content: string, maxLength: number = 200) => {
+    if (content.length <= maxLength) return content;
+    return `${content.substring(0, maxLength)}...`;
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,167 +151,154 @@ export default function ChatPage() {
   };
 
   if (!mounted) {
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   if (!isConnected) {
-    return null;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900 p-4">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Wallet Not Connected</h2>
+          <p className="text-slate-600 dark:text-slate-300 mb-6">Please connect your wallet to start chatting</p>
+          <button
+            onClick={() => router.push('/')}
+            className="px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
+          >
+            Connect Wallet
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-blue-950 dark:to-indigo-950">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-950/80 border-b border-slate-200/50 dark:border-slate-800/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">A</span>
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-                Ambience
-              </span>
-            </Link>
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/chat"
-                className="text-blue-600 dark:text-blue-400 font-medium"
-              >
-                Chat
-              </Link>
-              <Link
-                href="/profile"
-                className="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-              >
-                Profile
-              </Link>
-            </div>
+    <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900">
+      {/* Header */}
+      <header className="bg-white dark:bg-slate-800 shadow-sm px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Link
+            href="/"
+            className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </Link>
+          <div className="flex items-center space-x-2">
+            <Hash className="w-5 h-5 text-blue-500" />
+            <h1 className="text-xl font-semibold text-slate-900 dark:text-white">
+              Room #{roomId}
+            </h1>
           </div>
         </div>
-      </nav>
-
-      {/* Chat Interface */}
-      <div className="pt-16 h-screen flex flex-col">
-        <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 flex flex-col">
-          {/* Chat Header */}
-          <div className="bg-white dark:bg-slate-900 rounded-t-2xl border border-slate-200 dark:border-slate-800 p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-                <Hash className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                  General
-                </h2>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  {messages.length} messages
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-              <User className="w-4 h-4" />
-              <span>{ensName || truncateAddress(address as string)}</span>
-            </div>
+        <div className="flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-2 text-sm text-slate-500 dark:text-slate-400">
+            <span>Connected as:</span>
+            <span className="font-medium text-slate-900 dark:text-slate-200">
+              {ensName || (address ? truncateAddress(address) : '')}
+            </span>
           </div>
+          <Link
+            href="/profile"
+            className="p-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+            aria-label="Profile"
+          >
+            <User className="w-5 h-5" />
+          </Link>
+        </div>
+      </header>
 
-          {/* Messages List */}
-          <div className="flex-1 bg-white dark:bg-slate-900 border-x border-slate-200 dark:border-slate-800 overflow-y-auto p-4 space-y-4">
-            {paginatedMessages.map((message) => {
-              const isOwnMessage = message.sender.toLowerCase() === (address as string).toLowerCase();
-
-              return (
-                <div
-                  key={message.id}
-                  className={`flex gap-3 ${isOwnMessage ? "flex-row-reverse" : ""}`}
-                >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-bold text-sm">
-                      {message.ensName ? message.ensName.charAt(0).toUpperCase() : message.sender.slice(2, 4).toUpperCase()}
-                    </span>
-                  </div>
-                  <div className={`flex-1 max-w-md ${isOwnMessage ? "items-end" : ""}`}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-sm font-semibold text-slate-900 dark:text-slate-100 ${isOwnMessage ? "order-2" : ""}`}>
-                        {message.ensName || truncateAddress(message.sender)}
-                      </span>
-                      <span className={`text-xs text-slate-500 dark:text-slate-400 ${isOwnMessage ? "order-1" : ""}`}>
-                        {formatTimestamp(message.timestamp)}
-                      </span>
-                    </div>
-                    <div
-                      className={`p-4 rounded-2xl ${
-                        isOwnMessage
-                          ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-tr-none"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-tl-none"
-                      }`}
-                    >
-                      <p className="break-words">{message.content}</p>
-                    </div>
-                    <a
-                      href={`https://basescan.org/tx/${message.txHash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1 inline-block ${isOwnMessage ? "ml-auto" : ""}`}
-                    >
-                      View on chain
-                    </a>
-                  </div>
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-32">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+            <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
+            <span className="text-red-700 dark:text-red-300">{error}</span>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center p-8">
+            <div className="bg-slate-100 dark:bg-slate-800 rounded-full p-4 mb-4">
+              <MessageSquare className="w-8 h-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-1">No messages yet</h3>
+            <p className="text-slate-500 dark:text-slate-400">Be the first to send a message!</p>
+          </div>
+        ) : (
+          messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex ${
+                message.sender.toLowerCase() === address?.toLowerCase() ? "justify-end" : "justify-start"
+              }`}
+            >
+              <div
+                className={`max-w-[80%] md:max-w-[60%] rounded-2xl px-4 py-2 ${
+                  message.sender.toLowerCase() === address?.toLowerCase()
+                    ? "bg-blue-500 text-white rounded-br-none"
+                    : "bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-none border border-slate-200 dark:border-slate-700"
+                }`}
+              >
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className="text-xs font-medium">
+                    {message.sender.toLowerCase() === address?.toLowerCase()
+                      ? "You"
+                      : truncateAddress(message.sender)}
+                  </span>
+                  <span className="text-xs opacity-70">
+                    {formatTimestamp(message.timestamp)}
+                  </span>
                 </div>
-              );
-            })}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="bg-white dark:bg-slate-900 border-x border-slate-200 dark:border-slate-800 px-4 py-2 flex items-center justify-between">
-              <button
-                onClick={handlePreviousPage}
-                disabled={currentPage === 1}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Previous
-              </button>
-              <span className="text-sm text-slate-600 dark:text-slate-400">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Next
-                <ChevronRight className="w-4 h-4" />
-              </button>
+                <p className="whitespace-pre-wrap break-words">{truncateMessage(message.content)}</p>
+              </div>
             </div>
-          )}
+          ))
+        )}
+        <div ref={messagesEndRef} />
+      </div>
 
-          {/* Message Input */}
-          <div className="bg-white dark:bg-slate-900 rounded-b-2xl border border-slate-200 dark:border-slate-800 p-4">
-            <form onSubmit={handleSendMessage} className="flex gap-3">
-              <input
-                type="text"
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                placeholder="Type your message..."
-                className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={isLoading}
-              />
-              <button
-                type="submit"
-                disabled={!messageInput.trim() || isLoading}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
-              >
-                <Send className="w-5 h-5" />
-                {isLoading ? "Sending..." : "Send"}
-              </button>
-            </form>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-              Messages are stored permanently on Base blockchain
-            </p>
+      {/* Message Input */}
+      <div className="p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
+        {error && (
+          <div className="flex items-center justify-center p-2 mb-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+            <AlertCircle className="w-4 h-4 text-red-500 mr-2" />
+            <span className="text-sm text-red-700 dark:text-red-300">{error}</span>
           </div>
-        </div>
+        )}
+        <form onSubmit={handleSendMessage} className="flex space-x-2">
+          <input
+            type="text"
+            value={messageInput}
+            onChange={(e) => setMessageInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type your message..."
+            className="flex-1 px-4 py-2 rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            disabled={!isConnected || isSending}
+          />
+          <button
+            type="submit"
+            disabled={!messageInput.trim() || !isConnected || isSending}
+            className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            aria-label="Send message"
+          >
+            {isSending ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
+          </button>
+        </form>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 text-center">
+          Messages are stored on the blockchain
+        </p>
       </div>
     </div>
   );
