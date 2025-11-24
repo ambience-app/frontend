@@ -194,13 +194,16 @@ export default function WalletConnect() {
 
   const getWalletName = () => walletInfo?.name || connector?.name || "Connected Wallet";
 
-  // 🟢 UPDATED: show spinner & disable button during connect
+  // Handle wallet connection
   const handleConnect = async () => {
     try {
       setIsConnecting(true);
       await open();
+      // Close the dropdown after successful connection
+      setIsDropdownOpen(false);
     } catch (error: unknown) {
       console.error("Connection error:", error instanceof Error ? error.message : String(error));
+      toast.error('Failed to connect wallet');
     } finally {
       setIsConnecting(false);
     }
