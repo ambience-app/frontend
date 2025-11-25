@@ -10,6 +10,12 @@ import {
   keyPairFromBase64,
 } from '../encryption';
 
+// Mock the global crypto for tests
+if (!global.crypto) {
+  // @ts-ignore
+  global.crypto = require('crypto').webcrypto;
+}
+
 describe('Encryption Utilities', () => {
   // Initialize libsodium before running tests
   beforeAll(async () => {
