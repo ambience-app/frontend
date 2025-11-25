@@ -4,7 +4,7 @@ import { useAppKitAccount } from "@reown/appkit/react";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Hash,
   Lock,
@@ -18,7 +18,17 @@ import {
   UserMinus,
   TrendingUp,
   Clock,
+  ArrowRight,
+  PlusCircle,
+  Shield,
+  Hash as HashIcon,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from 'sonner';
 
 interface Room {
   id: number;
@@ -33,6 +43,181 @@ interface Room {
   trending?: boolean;
 }
 
+// Mock data - replace with real API calls
+const mockRooms: Room[] = [
+  {
+    id: 1,
+    name: 'general',
+    description: 'General discussions about everything',
+    isPrivate: false,
+    memberCount: 1245,
+    messageCount: 12543,
+    isJoined: true,
+    createdAt: new Date('2023-01-15'),
+    lastActive: '2m ago',
+    trending: true
+  },
+  {
+    id: 2,
+    name: 'trading',
+    description: 'Crypto trading discussions and signals',
+    isPrivate: false,
+    memberCount: 845,
+    messageCount: 9876,
+    isJoined: false,
+    createdAt: new Date('2023-02-20'),
+    lastActive: '15m ago'
+  },
+  {
+    id: 3,
+    name: 'dev',
+    description: 'Development discussions and help',
+    isPrivate: true,
+    memberCount: 342,
+    messageCount: 5678,
+    isJoined: true,
+    createdAt: new Date('2023-03-10'),
+    lastActive: '1h ago'
+  },
+];
+
+// Room Card Component
+const RoomCard = ({ room, onJoin, onLeave }: { room: Room; onJoin: (roomId: number) => void; onLeave: (roomId: number) => void }) => (
+  <Card className="hover:shadow-lg transition-shadow duration-200">
+    <CardHeader className="pb-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <div className="p-2 rounded-full bg-primary/10">
+            <HashIcon className="h-5 w-5 text-primary" />
+          </div>
+          <CardTitle className="text-lg font-semibold">#{room.name}</CardTitle>
+          {room.isPrivate && <Shield className="h-4 w-4 text-muted-foreground" />}
+        </div>
+        {room.trending && <Badge variant="outline" className="text-xs">Trending</Badge>}
+      </div>
+      <CardDescription className="line-clamp-2">{room.description}</CardDescription>
+    </CardHeader>
+    <CardContent className="pb-4">
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center">
+            <Users className="h-4 w-4 mr-1" />
+            <span>{room.memberCount.toLocaleString()}</span>
+          </div>
+          <div className="flex items-center">
+            <MessageSquare className="h-4 w-4 mr-1" />
+            <span>{room.messageCount.toLocaleString()}</span>
+          </div>
+          <div className="flex items-center">
+            <Clock className="h-4 w-4 mr-1" />
+            <span>{room.lastActive}</span>
+          </div>
+        </div>
+      </div>
+    </CardContent>
+    <CardFooter className="border-t px-6 py-3">
+      <div className="flex w-full justify-between items-center">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href={`/chat?room=${room.id}`} className="flex items-center">
+            Enter Room <ArrowRight className="ml-1 h-4 w-4" />
+          </Link>
+        </Button>
+        {room.isJoined ? (
+          <Button variant="outline" size="sm" onClick={() => onLeave(room.id)}>
+            <UserMinus className="h-4 w-4 mr-2" /> Leave
+          </Button>
+        ) : (
+          <Button size="sm" onClick={() => onJoin(room.id)}>
+            <UserPlus className="h-4 w-4 mr-2" /> Join
+          </Button>
+        )}
+      </div>
+    </CardFooter>
+  </Card>
+);
+
+// Create Room Form Component
+const CreateRoomForm = ({ onClose, onCreate }: { onClose: () => void; onCreate: (room: Omit<Room, 'id' | 'isJoined' | 'lastActive' | 'createdAt' | 'messageCount' | 'memberCount'>) => void }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    isPrivate: false,
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name.trim()) {
+      toast.error('Room name is required');
+      return;
+    }
+    onCreate({
+      ...formData,
+      name: formData.name.toLowerCase().replace(/\s+/g, '-'),
+    });
+  };
+
+  return (
+    <Card className="w-full max-w-md">
+      <CardHeader>
+        <CardTitle>Create New Room</CardTitle>
+        <CardDescription>Set up a new chat room for your community</CardDescription>
+      </CardHeader>
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="name" className="text-sm font-medium leading-none">
+              Room Name
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <HashIcon className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <Input
+                id="name"
+                placeholder="general"
+                className="pl-10"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="description" className="text-sm font-medium leading-none">
+              Description (Optional)
+            </label>
+            <Input
+              id="description"
+              placeholder="What's this room about?"
+              value={formData.description}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="isPrivate"
+              checked={formData.isPrivate}
+              onChange={(e) => setFormData({...formData, isPrivate: e.target.checked})}
+              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+            />
+            <label htmlFor="isPrivate" className="text-sm font-medium leading-none">
+              Private Room (Requires approval to join)
+            </label>
+          </div>
+        </CardContent>
+        <CardFooter className="flex justify-end space-x-2">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit">
+            <PlusCircle className="h-4 w-4 mr-2" /> Create Room
+          </Button>
+        </CardFooter>
+      </form>
+    </Card>
+  );
+};
+
 export default function RoomsPage() {
   const router = useRouter();
 
@@ -44,10 +229,13 @@ export default function RoomsPage() {
 
   // Use AppKit values first, fallback to Wagmi
   const isConnected = appkitIsConnected || wagmiIsConnected;
+  const address = appkitAddress || wagmiAddress;
 
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [newRoomName, setNewRoomName] = useState("");
   const [newRoomDescription, setNewRoomDescription] = useState("");
   const [newRoomIsPrivate, setNewRoomIsPrivate] = useState(false);
