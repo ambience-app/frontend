@@ -1,16 +1,51 @@
 "use client";
 
-import { useAppKitAccount } from "@reown/appkit/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Send, User, Loader2, AlertCircle, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { useAccount, useEnsName, mainnet } from "wagmi";
+import { Send, User, Loader2, AlertCircle, Clock, ChevronDown, ChevronUp, Hash, MessageSquare } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow, format } from 'date-fns';
+import { format } from 'date-fns';
 import { useInView } from 'react-intersection-observer';
+
+// Simple fallback for Avatar component
+const AvatarComponent = ({ className, ...props }: any) => (
+  <div className={cn("relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full", className)} {...props} />
+);
+
+const AvatarImageComponent = ({ src, alt, ...props }: any) => (
+  <img src={src} alt={alt} className="aspect-square h-full w-full" {...props} />
+);
+
+const AvatarFallbackComponent = ({ children, ...props }: any) => (
+  <div
+    className="flex h-full w-full items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700"
+    {...props}
+  >
+    {children}
+  </div>
+);
+
+// Fallback for Button component
+const ButtonComponent = ({ className, variant, size, children, ...props }: any) => (
+  <button
+    className={cn(
+      "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+      "disabled:opacity-50 disabled:pointer-events-none",
+      variant === "ghost" && "hover:bg-slate-100 dark:hover:bg-slate-800",
+      size === "icon" && "h-10 w-10",
+      className
+    )}
+    {...props}
+  >
+    {children}
+  </button>
+);
 
 type Message = {
   id: string;
@@ -30,15 +65,8 @@ export default function ChatPage() {
   const searchParams = useSearchParams();
   const roomId = searchParams.get('room') || '1'; // Default to room 1 if not specified
 
-  // Using REOWN AppKit hooks
-  const { address: appkitAddress, isConnected: appkitIsConnected } = useAppKitAccount();
-
-  // Fallback to Wagmi hooks
-  const { address: wagmiAddress, isConnected: wagmiIsConnected } = useAccount();
-
-  // Use AppKit values first, fallback to Wagmi
-  const address = appkitAddress || wagmiAddress;
-  const isConnected = appkitIsConnected || wagmiIsConnected;
+  // Use Wagmi hooks
+  const { address, isConnected } = useAccount();
 
   // Use the chat hook for message handling
   const { messages, isSending, isLoading, error, sendMessage, fetchMessages } = useChat(roomId);
@@ -73,7 +101,7 @@ export default function ChatPage() {
 
   // ENS resolution for current user
   const { data: ensName } = useEnsName({
-    address: address as `0x${string}` | undefined,
+    address: address,
     chainId: mainnet.id,
   });
 
@@ -188,10 +216,10 @@ export default function ChatPage() {
   };
 
   // Format sender address
-  const formatSender = (address: string) => {
-    if (!address) return '';
-    if (address.toLowerCase() === address?.toLowerCase()) return 'You';
-    return `${address.substring(0, 6)}...${address.substring(38)}`;
+  const formatSender = (addr: string) => {
+    if (!addr) return '';
+    if (address && addr.toLowerCase() === address.toLowerCase()) return 'You';
+    return `${addr.substring(0, 6)}...${addr.substring(38)}`;
   };
 
   const [mounted, setMounted] = useState(false);
@@ -231,22 +259,14 @@ export default function ChatPage() {
     );
   }
 
-  return (
-    <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-slate-800 shadow-sm px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center space-x-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.back()}
-            className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-              <line x1="19" y1="12" x2="5" y2="12"></line>
-              <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
-          </Button>
+// Handle scroll events
+const handleScroll = useCallback(() => {
+  if (!messagesContainerRef.current) return;
+  
+  const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+  const isNearBottom = scrollHeight - (scrollTop + clientHeight) < 100;
+  setIsAtBottom(isNearBottom);
+}, []);
           <div className="flex items-center space-x-2">
             <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/50">
               <Hash className="w-5 h-5 text-blue-500" />
@@ -271,12 +291,13 @@ export default function ChatPage() {
               </span>
             </div>
           </div>
-          <Button
+          <ButtonComponent
             variant="ghost"
             size="icon"
             className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
             onClick={scrollToBottom}
             disabled={isAtBottom}
+            aria-label="Scroll to bottom"
           >
             <ChevronDown className={cn(
               "w-5 h-5 transition-transform",
@@ -352,12 +373,12 @@ export default function ChatPage() {
                         {!isUser && (
                           <div className="flex-shrink-0 mr-2 mt-1">
                             {showAvatar ? (
-                              <Avatar className="w-8 h-8">
-                                <AvatarImage src={`https://api.dicebear.com/7.x/identicon/svg?seed=${message.sender}`} />
-                                <AvatarFallback>
-                                  {message.sender.substring(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
+                              <AvatarComponent className="w-8 h-8">
+                                <AvatarImageComponent src={`https://api.dicebear.com/7.x/identicon/svg?seed=${message.sender}`} />
+                                <AvatarFallbackComponent>
+                                  {typeof message.sender === 'string' ? message.sender.substring(0, 2).toUpperCase() : '??'}
+                                </AvatarFallbackComponent>
+                              </AvatarComponent>
                             ) : (
                               <div className="w-8" />
                             )}
@@ -405,10 +426,10 @@ export default function ChatPage() {
                         
                         {isUser && (
                           <div className="flex-shrink-0 ml-2 mt-1">
-                            <Avatar className="w-8 h-8">
-                              <AvatarImage src={`https://api.dicebear.com/7.x/identicon/svg?seed=${address}`} />
-                              <AvatarFallback>You</AvatarFallback>
-                            </Avatar>
+                            <AvatarComponent className="w-8 h-8">
+                              <AvatarImageComponent src={`https://api.dicebear.com/7.x/identicon/svg?seed=${address || 'user'}`} />
+                              <AvatarFallbackComponent>You</AvatarFallbackComponent>
+                            </AvatarComponent>
                           </div>
                         )}
                       </div>
@@ -457,7 +478,7 @@ export default function ChatPage() {
             </div>
           </div>
           
-          <Button
+          <ButtonComponent
             type="submit"
             size="icon"
             disabled={!messageInput.trim() || !isConnected || isSending || messageInput.length > 500}
