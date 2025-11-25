@@ -236,11 +236,6 @@ export default function RoomsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [newRoomName, setNewRoomName] = useState("");
-  const [newRoomDescription, setNewRoomDescription] = useState("");
-  const [newRoomIsPrivate, setNewRoomIsPrivate] = useState(false);
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [filterType, setFilterType] = useState<"all" | "public" | "private" | "joined">("all");
 
   useEffect(() => {
     setMounted(true);
