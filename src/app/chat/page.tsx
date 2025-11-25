@@ -5,12 +5,103 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAccount, useEnsName, mainnet } from "wagmi";
 import { Send, User, Loader2, AlertCircle, Clock, ChevronDown, ChevronUp, Hash, MessageSquare } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { format } from 'date-fns';
-import { useInView } from 'react-intersection-observer';
+
+// Simple UI components to avoid external dependencies
+const Button = ({ 
+  children, 
+  className = '', 
+  onClick, 
+  disabled = false, 
+  type = 'button',
+  variant = 'default',
+  size = 'default',
+  ...props 
+}: any) => {
+  return (
+    <button
+      type={type}
+      className={cn(
+        "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+        "disabled:opacity-50 disabled:pointer-events-none",
+        variant === "ghost" && "hover:bg-slate-100 dark:hover:bg-slate-800",
+        variant === "default" && "bg-blue-500 text-white hover:bg-blue-600",
+        size === "icon" && "h-10 w-10",
+        className
+      )}
+      onClick={onClick}
+      disabled={disabled}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
+
+const Input = ({ 
+  className = '', 
+  value, 
+  onChange, 
+  placeholder = '', 
+  disabled = false,
+  ...props 
+}: any) => {
+  return (
+    <input
+      className={cn(
+        "flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white",
+        "file:border-0 file:bg-transparent file:text-sm file:font-medium",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        "dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-800",
+        className
+      )}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      disabled={disabled}
+      {...props}
+    />
+  );
+};
+
+const Avatar = ({ className, ...props }: any) => (
+  <div className={cn("relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full", className)} {...props} />
+);
+
+const AvatarImage = ({ src, alt, ...props }: any) => (
+  <img src={src} alt={alt} className="aspect-square h-full w-full" {...props} />
+);
+
+const AvatarFallback = ({ children, ...props }: any) => (
+  <div
+    className="flex h-full w-full items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700"
+    {...props}
+  >
+    {children}
+  </div>
+);
+
+// Simple inView hook fallback
+const useInView = () => {
+  const [ref, setRef] = useState<HTMLElement | null>(null);
+  const [inView, setInView] = useState(false);
+  
+  useEffect(() => {
+    if (!ref) return;
+    
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    
+    observer.observe(ref);
+    return () => observer.disconnect();
+  }, [ref]);
+  
+  return [setRef, inView];
+};
 
 // Simple fallback for Avatar component
 const AvatarComponent = ({ className, ...props }: any) => (
@@ -69,7 +160,7 @@ export default function ChatPage() {
   const { address, isConnected } = useAccount();
 
   // Use the chat hook for message handling
-  const { messages, isSending, isLoading, error, sendMessage, fetchMessages } = useChat(roomId);
+  const { messages = [], isSending, isLoading, error, sendMessage, fetchMessages } = useChat(roomId);
   
   const [messageInput, setMessageInput] = useState("");
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -101,7 +192,7 @@ export default function ChatPage() {
 
   // ENS resolution for current user
   const { data: ensName } = useEnsName({
-    address: address,
+    address: address as `0x${string}`,
     chainId: mainnet.id,
   });
 
@@ -209,17 +300,20 @@ export default function ChatPage() {
   // Check if messages are from the same sender and close in time
   const isSameSender = (current: Message, next: Message | undefined) => {
     if (!next) return false;
+    const currentSender = typeof current.sender === 'string' ? current.sender : current.sender.id;
+    const nextSender = typeof next.sender === 'string' ? next.sender : next.sender.id;
     return (
-      current.sender.toLowerCase() === next.sender.toLowerCase() &&
+      currentSender.toLowerCase() === nextSender.toLowerCase() &&
       next.timestamp - current.timestamp < 5 * 60 * 1000 // 5 minutes
     );
   };
 
   // Format sender address
-  const formatSender = (addr: string) => {
+  const formatSender = (addr: string | undefined) => {
     if (!addr) return '';
-    if (address && addr.toLowerCase() === address.toLowerCase()) return 'You';
-    return `${addr.substring(0, 6)}...${addr.substring(38)}`;
+    if (address && typeof addr === 'string' && addr.toLowerCase() === address.toLowerCase()) return 'You';
+    if (typeof addr !== 'string') return 'Unknown';
+    return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
   };
 
   const [mounted, setMounted] = useState(false);
