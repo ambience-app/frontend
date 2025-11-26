@@ -1,7 +1,10 @@
 import dynamic from 'next/dynamic';
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+import './globals.css';
+import { ErrorProvider } from '@/contexts/ErrorContext';
+import { ErrorBoundary } from '@/components/error/ErrorBoundary';
+import { setupGlobalErrorHandlers } from '@/lib/errors/errorLogger';
 
 // Lazy load non-critical components
 const Toaster = dynamic(() => import('@/components/ui/sonner').then(mod => mod.Toaster), { 
@@ -69,20 +72,42 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const plausibleDomain =
-    process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN || 'ambience-chat.vercel.app';
+  if (typeof window !== 'undefined') {
+    setupGlobalErrorHandlers();
+  }
+
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <PlausibleProvider domain="ambience-chat.vercel.app" trackOutboundLinks>
-          <ErrorBoundaryWrapper>
-            <WebSocketProvider>
-              <Providers>
-                {children}
-              </Providers>
-            </WebSocketProvider>
-          </ErrorBoundaryWrapper>
-        </PlausibleProvider>
+        <ErrorBoundary
+          fallback={(error, reset) => (
+            <div className="flex items-center justify-center min-h-screen p-4">
+              <div className="w-full max-w-md p-6 space-y-4 bg-card rounded-lg shadow-lg">
+                <h1 className="text-2xl font-bold text-destructive">Something went wrong</h1>
+                <p className="text-muted-foreground">
+                  {error.message || 'An unexpected error occurred. Please try again.'}
+                </p>
+                <button
+                  onClick={reset}
+                  className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-md hover:bg-primary/90 transition-colors"
+                >
+                  Try again
+                </button>
+              </div>
+            </div>
+          )}
+        >
+          <ErrorProvider>
+            <ErrorBoundaryWrapper>
+              <WebSocketProvider>
+                <Providers>
+                  {children}
+                  <Toaster position="top-right" />
+                </Providers>
+              </WebSocketProvider>
+            </ErrorBoundaryWrapper>
+          </ErrorProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
