@@ -1,142 +1,32 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useAccount, useEnsName, mainnet } from "wagmi";
-import { Send, User, Loader2, AlertCircle, Clock, ChevronDown, ChevronUp, Hash, MessageSquare } from "lucide-react";
-import { useChat } from "@/hooks/useChat";
-import { cn } from "@/lib/utils";
+import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 
-// Simple UI components to avoid external dependencies
-const Button = ({ 
-  children, 
-  className = '', 
-  onClick, 
-  disabled = false, 
-  type = 'button',
-  variant = 'default',
-  size = 'default',
-  ...props 
-}: any) => {
+// Lazy load the chat page content with no SSR
+const ChatPageContent = dynamic(
+  () => import('./ChatPageContent').then(mod => mod.ChatPageContent),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+);
+
+export default function ChatPage() {
   return (
-    <button
-      type={type}
-      className={cn(
-        "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-        "disabled:opacity-50 disabled:pointer-events-none",
-        variant === "ghost" && "hover:bg-slate-100 dark:hover:bg-slate-800",
-        variant === "default" && "bg-blue-500 text-white hover:bg-blue-600",
-        size === "icon" && "h-10 w-10",
-        className
-      )}
-      onClick={onClick}
-      disabled={disabled}
-      {...props}
-    >
-      {children}
-    </button>
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <ChatPageContent />
+    </Suspense>
   );
-};
-
-const Input = ({ 
-  className = '', 
-  value, 
-  onChange, 
-  placeholder = '', 
-  disabled = false,
-  ...props 
-}: any) => {
-  return (
-    <input
-      className={cn(
-        "flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white",
-        "file:border-0 file:bg-transparent file:text-sm file:font-medium",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        "dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:focus-visible:ring-slate-800",
-        className
-      )}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      disabled={disabled}
-      {...props}
-    />
-  );
-};
-
-const Avatar = ({ className, ...props }: any) => (
-  <div className={cn("relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full", className)} {...props} />
-);
-
-const AvatarImage = ({ src, alt, ...props }: any) => (
-  <img src={src} alt={alt} className="aspect-square h-full w-full" {...props} />
-);
-
-const AvatarFallback = ({ children, ...props }: any) => (
-  <div
-    className="flex h-full w-full items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700"
-    {...props}
-  >
-    {children}
-  </div>
-);
-
-// Simple inView hook fallback
-const useInView = () => {
-  const [ref, setRef] = useState<HTMLElement | null>(null);
-  const [inView, setInView] = useState(false);
-  
-  useEffect(() => {
-    if (!ref) return;
-    
-    const observer = new IntersectionObserver(
-      ([entry]) => setInView(entry.isIntersecting),
-      { threshold: 0.1 }
-    );
-    
-    observer.observe(ref);
-    return () => observer.disconnect();
-  }, [ref]);
-  
-  return [setRef, inView];
-};
-
-// Simple fallback for Avatar component
-const AvatarComponent = ({ className, ...props }: any) => (
-  <div className={cn("relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full", className)} {...props} />
-);
-
-const AvatarImageComponent = ({ src, alt, ...props }: any) => (
-  <img src={src} alt={alt} className="aspect-square h-full w-full" {...props} />
-);
-
-const AvatarFallbackComponent = ({ children, ...props }: any) => (
-  <div
-    className="flex h-full w-full items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700"
-    {...props}
-  >
-    {children}
-  </div>
-);
-
-// Fallback for Button component
-const ButtonComponent = ({ className, variant, size, children, ...props }: any) => (
-  <button
-    className={cn(
-      "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-      "disabled:opacity-50 disabled:pointer-events-none",
-      variant === "ghost" && "hover:bg-slate-100 dark:hover:bg-slate-800",
-      size === "icon" && "h-10 w-10",
-      className
-    )}
-    {...props}
-  >
-    {children}
-  </button>
-);
+}
 
 type Message = {
   id: string;
@@ -353,175 +243,44 @@ export default function ChatPage() {
     );
   }
 
-// Handle scroll events
-const handleScroll = useCallback(() => {
-  if (!messagesContainerRef.current) return;
-  
-  const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
-  const isNearBottom = scrollHeight - (scrollTop + clientHeight) < 100;
-  setIsAtBottom(isNearBottom);
-}, []);
-          <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/50">
-              <Hash className="w-5 h-5 text-blue-500" />
-            </div>
-            <div>
-              <h1 className="font-semibold text-slate-900 dark:text-white">
-                Room #{roomId}
-              </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {messages.length} messages
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center space-x-3">
-          <div className="hidden md:flex items-center space-x-2 text-sm">
-            <span className="text-slate-500 dark:text-slate-400">Connected as:</span>
-            <div className="flex items-center space-x-2 bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">
-              <div className="w-2 h-2 rounded-full bg-green-500"></div>
-              <span className="font-medium text-slate-900 dark:text-slate-200">
-                {ensName || (address ? formatSender(address) : '')}
-              </span>
-            </div>
-          </div>
-          <ButtonComponent
-            variant="ghost"
-            size="icon"
-            className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-            onClick={scrollToBottom}
-            disabled={isAtBottom}
-            aria-label="Scroll to bottom"
-          >
-            <ChevronDown className={cn(
-              "w-5 h-5 transition-transform",
-              isAtBottom ? "opacity-50" : "animate-bounce"
-            )} />
-          </Button>
-        </div>
-      </header>
-
-      {/* Messages */}
-      <div 
-        ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-6"
-      >
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-full space-y-4">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-            <p className="text-slate-500 dark:text-slate-400">Loading messages...</p>
-          </div>
-        ) : error ? (
-          <div className="flex items-center justify-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg mx-4">
-            <AlertCircle className="w-5 h-5 text-red-500 mr-2 flex-shrink-0" />
-            <span className="text-sm text-red-700 dark:text-red-300">{error}</span>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center p-8">
-            <div className="bg-slate-100 dark:bg-slate-800 rounded-full p-4 mb-4">
-              <MessageSquare className="w-8 h-8 text-slate-400" />
-            </div>
-            <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-1">No messages yet</h3>
-            <p className="text-slate-500 dark:text-slate-400">Be the first to send a message!</p>
+  return (
+    <div className="flex flex-col h-screen bg-background">
+      <Suspense fallback={<div className="h-16 bg-background border-b" />}>
+        <ChatHeader roomName={roomId} />
+      </Suspense>
+      
+      <LazyLoader>
+        {isConnected ? (
+          <div className="flex-1 overflow-hidden flex flex-col">
+            <Suspense fallback={
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-20 w-full bg-muted/20 rounded-md animate-pulse" />
+                ))}
+              </div>
+            }>
+              <ChatMessages 
+                messages={groupedMessages}
+                isFetching={isLoading}
+                hasMore={hasMore}
+                onLoadMore={loadMoreMessages}
+              />
+            </Suspense>
+            
+            <Suspense fallback={<div className="p-4 border-t">Loading input...</div>}>
+              <ChatInput 
+                onSendMessage={handleSendMessage}
+                isSending={isSending}
+                messageInput={messageInput}
+                setMessageInput={setMessageInput}
+              />
+            </Suspense>
           </div>
         ) : (
-          <>
-            {!hasMore && !isLoadingMore && (
-              <div className="text-center">
-                <span className="text-xs text-slate-500 dark:text-slate-400">
-                  Beginning of conversation
-                </span>
-              </div>
-            )}
-            
-            {isLoadingMore && (
-              <div className="flex justify-center py-2">
-                <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
-              </div>
-            )}
-            
-            <div ref={loadMoreRef} className="h-1" />
-            
-            {groupedMessages.map((group, groupIndex) => (
-              <div key={group.date} className="space-y-4">
-                <div className="sticky top-2 z-10">
-                  <div className="mx-auto w-fit px-3 py-1 bg-white dark:bg-slate-800 text-xs font-medium text-slate-500 dark:text-slate-400 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
-                    {formatDateHeader(group.date)}
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  {group.messages.map((message, index) => {
-                    const isUser = message.sender.toLowerCase() === address?.toLowerCase();
-                    const showAvatar = !isUser && !isSameSender(message, group.messages[index + 1]);
-                    const showTime = !isSameSender(message, group.messages[index + 1]);
-                    
-                    return (
-                      <div
-                        key={message.id}
-                        className={cn(
-                          "flex items-start group",
-                          isUser ? "justify-end" : "justify-start"
-                        )}
-                      >
-                        {!isUser && (
-                          <div className="flex-shrink-0 mr-2 mt-1">
-                            {showAvatar ? (
-                              <AvatarComponent className="w-8 h-8">
-                                <AvatarImageComponent src={`https://api.dicebear.com/7.x/identicon/svg?seed=${message.sender}`} />
-                                <AvatarFallbackComponent>
-                                  {typeof message.sender === 'string' ? message.sender.substring(0, 2).toUpperCase() : '??'}
-                                </AvatarFallbackComponent>
-                              </AvatarComponent>
-                            ) : (
-                              <div className="w-8" />
-                            )}
-                          </div>
-                        )}
-                        
-                        <div className={cn(
-                          "max-w-[85%] md:max-w-[70%] space-y-1",
-                          isUser && "flex flex-col items-end"
-                        )}>
-                          <div
-                            className={cn(
-                              "px-4 py-2 rounded-2xl",
-                              isUser
-                                ? "bg-blue-500 text-white rounded-br-none"
-                                : "bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-none border border-slate-200 dark:border-slate-700"
-                            )}
-                          >
-                            {!isUser && showAvatar && (
-                              <div className="flex items-center space-x-2 mb-1">
-                                <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                                  {formatSender(message.sender)}
-                                </span>
-                              </div>
-                            )}
-                            <p className="whitespace-pre-wrap break-words">{message.content}</p>
-                          </div>
-                          
-                          {showTime && (
-                            <div className="flex items-center space-x-2 px-1">
-                              <span className="text-xs text-slate-500 dark:text-slate-400">
-                                {formatMessageTime(message.timestamp)}
-                              </span>
-                              {isUser && (
-                                <span className={cn(
-                                  "text-xs",
-                                  isUser ? "text-blue-400" : "text-slate-400"
-                                )}>
-                                  {isUser ? 'Sent' : 'Delivered'}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        
-                        {isUser && (
-                          <div className="flex-shrink-0 ml-2 mt-1">
-                            <AvatarComponent className="w-8 h-8">
-                              <AvatarImageComponent src={`https://api.dicebear.com/7.x/identicon/svg?seed=${address || 'user'}`} />
+          <div className="flex-1 flex items-center justify-center">
+            <Button onClick={() => router.push('/')} disabled={false}>
+              Connect Wallet to Chat
+            </Button>
                               <AvatarFallbackComponent>You</AvatarFallbackComponent>
                             </AvatarComponent>
                           </div>
