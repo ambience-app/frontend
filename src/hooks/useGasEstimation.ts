@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePublicClient } from 'wagmi';
-import { formatGwei, parseGwei } from 'viem';
+import { formatGwei as viemFormatGwei, parseGwei as viemParseGwei } from 'viem';
 
 type GasSettings = {
   maxFeePerGas: bigint;
@@ -39,6 +39,7 @@ const BLOCK_TIMES = {
   arbitrum: 0.26,
   optimism: 2,
   celo: 5,
+  base: 2,
 } as const;
 
 /**
@@ -110,7 +111,7 @@ export function useGasEstimation() {
       
       // Calculate priority fee as a percentage of base fee
       const priorityFeePercentage = PRIORITY_FEE_PERCENTAGES[priorityLevel];
-      const maxPriorityFeePerGas = (baseFee * BigInt(Math.floor(priorityFeePercentage * 100))) / 100n;
+      const maxPriorityFeePerGas = (baseFee * BigInt(Math.floor(priorityFeePercentage * 100))) / BigInt(100);
       
       return {
         baseFee,
@@ -136,7 +137,7 @@ export function useGasEstimation() {
       const {
         to,
         data = '0x',
-        value = 0n,
+        value = BigInt(0),
         multiplier = 1.2, // 20% buffer by default
         priorityLevel = 'medium',
         customPriorityFee,
@@ -150,7 +151,7 @@ export function useGasEstimation() {
       const maxPriorityFeePerGas = customPriorityFee || feeData.maxPriorityFeePerGas;
       
       // Calculate max fee per gas (base fee * 2 + priority fee)
-      const maxFeePerGas = (feeData.baseFee * 2n) + maxPriorityFeePerGas;
+      const maxFeePerGas = (feeData.baseFee * BigInt(2)) + maxPriorityFeePerGas;
       
       // Estimate gas limit
       let gasLimit: bigint;
@@ -169,7 +170,7 @@ export function useGasEstimation() {
       }
       
       // Apply multiplier to gas limit (with buffer)
-      const bufferedGasLimit = (gasLimit * BigInt(Math.floor(multiplier * 100))) / 100n;
+      const bufferedGasLimit = (gasLimit * BigInt(Math.floor(multiplier * 100))) / BigInt(100);
       
       // Estimate time (very rough estimate based on network)
       const estimatedTime = BLOCK_TIMES[network] * 2; // Assuming 2 blocks to be safe
@@ -193,7 +194,7 @@ export function useGasEstimation() {
     } finally {
       setIsLoading(false);
     }
-  }, [provider, getFeeData, network]);
+  }, [client, getFeeData, network]);
 
   // Get suggested gas settings without estimating a specific transaction
   const getSuggestedGasSettings = useCallback(async (): Promise<GasSettings> => {
@@ -205,10 +206,10 @@ export function useGasEstimation() {
       const feeData = await getFeeData();
       
       // Default gas limit (can be overridden by the user)
-      const defaultGasLimit = 21000n; // Standard ETH transfer
+      const defaultGasLimit = BigInt(21000); // Standard ETH transfer
       
       // Calculate max fee per gas (base fee * 2 + priority fee)
-      const maxFeePerGas = (feeData.baseFee * 2n) + feeData.maxPriorityFeePerGas;
+      const maxFeePerGas = (feeData.baseFee * BigInt(2)) + feeData.maxPriorityFeePerGas;
       
       return {
         maxFeePerGas,
@@ -221,16 +222,16 @@ export function useGasEstimation() {
       console.error('Error getting suggested gas settings:', err);
       throw err instanceof Error ? err : new Error('Failed to get suggested gas settings');
     }
-  }, [provider, getFeeData, network]);
+  }, [client, getFeeData, network]);
 
   // Format gas price in gwei
   const formatGwei = useCallback((value: bigint): string => {
-    return formatGwei(value);
+    return viemFormatGwei(value);
   }, []);
 
   // Parse gwei string to bigint
   const parseGwei = useCallback((value: string): bigint => {
-    return parseGwei(value);
+    return viemParseGwei(value);
   }, []);
 
   return {
