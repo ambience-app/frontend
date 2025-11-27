@@ -5,40 +5,22 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  workflow_dispatch:
+
+# Set environment variables for all jobs
+env:
+  NODE_ENV: test
+  NEXT_TELEMETRY_DISABLED: 1
+  CI: true
+
+# Allow jobs to run in parallel when possible
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run type check
-        run: npm run typecheck
-      
-      - name: Run lint
-        run: npm run lint
-      
-      - name: Run tests
-        run: npm test
-        env:
-          CI: true
-          NEXT_PUBLIC_NETWORK: testnet
-          NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${{ secrets.WALLETCONNECT_PROJECT_ID }}
-
-  build:
-    name: Build
-    needs: test
+  lint:
+    name: Lint & Type Check
     runs-on: ubuntu-latest
     
     steps:
@@ -53,8 +35,102 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Build
-        run: npm run build
+      - name: Run ESLint
+        run: npm run lint
+      
+      - name: Run Type Check
+        run: npm run typecheck
+      
+      - name: Check formatting
+        run: npm run format:check
+
+  test:
+    name: Run Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x]
+        os: [ubuntu-latest]
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests with coverage
+        run: |
+          npm test -- --coverage
+          npx codecov --token=${{ secrets.CODECOV_TOKEN }}
         env:
           NEXT_PUBLIC_NETWORK: testnet
+          NEXT_PUBLIC_WALLETCONFIG_PROJECT_ID: ${{ secrets.WALLETCONNECT_PROJECT_ID }}
+          CI: true
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: |
+            coverage/
+            .next/test-results/
+          retention-days: 7
+
+  build:
+    name: Build & Analyze
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: |
+          npm run build
+          npm run analyze
+        env:
+          ANALYZE: 'true'
+          NEXT_PUBLIC_NETWORK: testnet
           NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${{ secrets.WALLETCONNECT_PROJECT_ID }}
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: |
+            .next/
+            public/
+            package.json
+            package-lock.json
+          retention-days: 7
+      
+      - name: Check performance budget
+        run: |
+          npx webpack-bundle-analyzer .next/analyze/client.html --mode static -O .next/analyze/stats.json
+          npx bundlewatch --config .bundlewatch.json
+      
+      - name: Upload bundle analysis
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: bundle-analysis
+          path: .next/analyze/
+          retention-days: 7
