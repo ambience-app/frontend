@@ -2,8 +2,36 @@
 import Image from "next/image";
 import { useProfile } from "@/hooks/useProfile";
 
-export function ProfileView({ userAddress }) {
-  const { profile } = useProfile(userAddress);
+/**
+ * ProfileView component
+ *
+ * Displays the current user's profile information including avatar, username, and bio.
+ * Used to show user profile details in a clean, card-like format.
+ *
+ * Features:
+ * - Displays current user's profile from their wallet address
+ * - Conditional avatar display with fallback
+ * - IPFS integration for decentralized avatar storage
+ * - Responsive design with proper spacing
+ * - Loading and empty states handling
+ *
+ * @component
+ *
+ * @example
+ * ```tsx
+ * // Display current user's profile
+ * <ProfileView />
+ *
+ * // With custom styling
+ * <div className="bg-white rounded-lg shadow">
+ *   <ProfileView />
+ * </div>
+ * ```
+ *
+ * @returns {JSX.Element} A profile card with avatar, username, and bio
+ */
+export function ProfileView() {
+  const { profile } = useProfile();
 
   if (!profile) return <p> No profile found for this user.</p>;
 
