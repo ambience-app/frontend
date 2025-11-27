@@ -16,6 +16,56 @@ type RoomSearchProps = {
   className?: string;
 };
 
+/**
+ * RoomSearch component
+ *
+ * A comprehensive search and filtering interface for rooms with real-time filtering,
+ * advanced search options, and filter state management.
+ *
+ * Features:
+ * - Text-based room search with query filtering
+ * - Advanced filters for room type (public/private)
+ * - Minimum member count filtering
+ * - Collapsible filter panel for better UX
+ * - Clear filters functionality
+ * - Real-time search updates
+ * - Visual filter state indicators
+ *
+ * @component
+ * @param {RoomSearchProps} props - Component props
+ * @param {(filters: RoomFilter) => void} props.onSearch - Callback called when search filters change
+ * @param {string} [props.className] - Additional CSS classes to apply
+ *
+ * @example
+ * ```tsx
+ * // Basic usage
+ * <RoomSearch onSearch={(filters) => setSearchFilters(filters)} />
+ *
+ * // With custom styling
+ * <RoomSearch 
+ *   onSearch={handleSearch}
+ *   className="bg-white p-4 rounded-lg shadow"
+ * />
+ *
+ * // With controlled filters
+ * <RoomSearch onSearch={handleSearch} />
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Filter structure example
+ * const filters = {
+ *   query: 'blockchain',
+ *   isPrivate: false, // or null for all rooms
+ *   minMembers: 10    // or null for no minimum
+ * };
+ * ```
+ */
+interface RoomSearchProps {
+  onSearch: (filters: RoomFilter) => void;
+  className?: string;
+}
+
 export function RoomSearch({ onSearch, className = '' }: RoomSearchProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<RoomFilter>({

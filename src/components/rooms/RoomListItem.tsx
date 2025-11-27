@@ -14,6 +14,53 @@ type RoomListItemProps = {
   onLeave?: (roomId: number) => void;
 };
 
+/**
+ * RoomListItem component
+ *
+ * Displays a single room in a list format with join/leave functionality,
+ * room metadata, and visual indicators for room status and type.
+ *
+ * Features:
+ * - Room name, description, and metadata display
+ * - Visual indicators for private/public rooms and trending status
+ * - Join/leave functionality with loading states
+ * - Member count and message activity indicators
+ * - Time-based activity tracking
+ * - Toast notifications for user feedback
+ * - Automatic navigation after successful join
+ *
+ * @component
+ * @param {RoomListItemProps} props - Component props
+ * @param {Room} props.room - The room data to display
+ * @param {(roomId: number) => void} [props.onJoin] - Callback when user joins room
+ * @param {(roomId: number) => void} [props.onLeave] - Callback when user leaves room
+ *
+ * @example
+ * ```tsx
+ * // Basic room list item
+ * <RoomListItem 
+ *   room={room} 
+ *   onJoin={(id) => console.log('Joined room', id)}
+ *   onLeave={(id) => console.log('Left room', id)}
+ * />
+ *
+ * // In a room list
+ * {rooms.map(room => (
+ *   <RoomListItem 
+ *     key={room.id}
+ *     room={room}
+ *     onJoin={handleJoin}
+ *     onLeave={handleLeave}
+ *   />
+ * ))}
+ * ```
+ */
+interface RoomListItemProps {
+  room: Room;
+  onJoin?: (roomId: number) => void;
+  onLeave?: (roomId: number) => void;
+}
+
 export function RoomListItem({ room, onJoin, onLeave }: RoomListItemProps) {
   const router = useRouter();
   const { toast } = useToast();
