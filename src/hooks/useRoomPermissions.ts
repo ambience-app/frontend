@@ -66,7 +66,7 @@ const permissionCache = new Map<string, boolean>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 const useRoomPermissions = ({ room, currentUser, initialMembers = [] }: RoomPermissionsHookProps) => {
-  const { address } = useAccount();
+  useAccount(); // Keep the hook call for potential side effects
   const [members, setMembers] = useState<RoomMember[]>(() => {
     // Initialize with current user if not present
     const userExists = initialMembers.some(m => m.address.toLowerCase() === currentUser.toLowerCase());

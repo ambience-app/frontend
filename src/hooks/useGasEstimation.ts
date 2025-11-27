@@ -1,28 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useProvider } from '@reown/appkit/react';
-import { BigNumber, ethers } from 'ethers';
+import { usePublicClient } from 'wagmi';
+import { formatGwei as viemFormatGwei, parseGwei as viemParseGwei } from 'viem';
 
 type GasSettings = {
-  maxFeePerGas: BigNumber;
-  maxPriorityFeePerGas: BigNumber;
-  gasLimit: BigNumber;
-  baseFee?: BigNumber;
+  maxFeePerGas: bigint;
+  maxPriorityFeePerGas: bigint;
+  gasLimit: bigint;
+  baseFee?: bigint;
   estimatedTime?: number; // in seconds
 };
 
 type GasEstimationOptions = {
   // Transaction parameters
-  to?: string;
-  data?: string;
-  value?: BigNumber | string;
+  to?: `0x${string}`;
+  data?: `0x${string}`;
+  value?: bigint | string;
   
   // Gas estimation options
   multiplier?: number; // Gas limit multiplier (e.g., 1.2 for 20% buffer)
   priorityLevel?: 'low' | 'medium' | 'high' | 'custom';
-  customPriorityFee?: BigNumber;
+  customPriorityFee?: bigint;
   
   // Callback for custom estimation logic
-  estimateGas?: (provider: ethers.Provider) => Promise<BigNumber>;
+  estimateGas?: (client: ReturnType<typeof usePublicClient>) => Promise<bigint>;
 };
 
 // Default priority fee percentages (of base fee)
@@ -39,6 +39,7 @@ const BLOCK_TIMES = {
   arbitrum: 0.26,
   optimism: 2,
   celo: 5,
+  base: 2,
 } as const;
 
 /**
@@ -61,7 +62,7 @@ const BLOCK_TIMES = {
  */
 
 export function useGasEstimation() {
-  const provider = useProvider();
+  const client = usePublicClient();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
   const [gasSettings, setGasSettings] = useState<GasSettings | null>(null);
@@ -69,52 +70,48 @@ export function useGasEstimation() {
 
   // Detect network
   useEffect(() => {
-    const detectNetwork = async () => {
-      if (!provider) return;
-      
-      try {
-        const network = await provider.getNetwork();
-        // Map chainId to network name
-        const networkMap: { [key: number]: keyof typeof BLOCK_TIMES } = {
-          1: 'ethereum',
-          137: 'polygon',
-          42161: 'arbitrum',
-          10: 'optimism',
-          42220: 'celo',
-        };
-        
-        setNetwork(networkMap[Number(network.chainId)] || 'ethereum');
-      } catch (err) {
-        console.error('Error detecting network:', err);
-      }
-    };
+    if (!client.chain) return;
     
-    detectNetwork();
-  }, [provider]);
+    try {
+      // Map chainId to network name
+      const networkMap: { [key: number]: keyof typeof BLOCK_TIMES } = {
+        1: 'ethereum',
+        137: 'polygon',
+        42161: 'arbitrum',
+        10: 'optimism',
+        42220: 'celo',
+        8453: 'base',
+        11155111: 'ethereum', // Sepolia
+      };
+      
+      setNetwork(networkMap[client.chain.id] || 'ethereum');
+    } catch (err) {
+      console.error('Error detecting network:', err);
+    }
+  }, [client.chain]);
 
   // Get current base fee and suggest priority fee
   const getFeeData = useCallback(async (): Promise<{
-    baseFee: BigNumber;
-    maxPriorityFeePerGas: BigNumber;
+    baseFee: bigint;
+    maxPriorityFeePerGas: bigint;
     priorityLevel: 'low' | 'medium' | 'high';
   }> => {
-    if (!provider) {
-      throw new Error('Provider not available');
+    if (!client) {
+      throw new Error('Client not available');
     }
 
     try {
-      const feeData = await provider.getFeeData();
-      
-      if (!feeData.lastBaseFeePerGas) {
+      const block = await client.getBlock();
+      if (!block.baseFeePerGas) {
         throw new Error('Could not fetch base fee');
       }
 
-      const baseFee = feeData.lastBaseFeePerGas;
+      const baseFee = block.baseFeePerGas;
       const priorityLevel: 'low' | 'medium' | 'high' = 'medium'; // Default to medium
       
       // Calculate priority fee as a percentage of base fee
       const priorityFeePercentage = PRIORITY_FEE_PERCENTAGES[priorityLevel];
-      const maxPriorityFeePerGas = baseFee.mul(Math.floor(priorityFeePercentage * 100)).div(100);
+      const maxPriorityFeePerGas = (baseFee * BigInt(Math.floor(priorityFeePercentage * 100))) / BigInt(100);
       
       return {
         baseFee,
@@ -125,12 +122,12 @@ export function useGasEstimation() {
       console.error('Error getting fee data:', err);
       throw new Error('Failed to get fee data');
     }
-  }, [provider]);
+  }, [client]);
 
   // Estimate gas for a transaction
   const estimateGas = useCallback(async (options: GasEstimationOptions): Promise<GasSettings> => {
-    if (!provider) {
-      throw new Error('Provider not available');
+    if (!client) {
+      throw new Error('Client not available');
     }
 
     setIsLoading(true);
@@ -140,7 +137,7 @@ export function useGasEstimation() {
       const {
         to,
         data = '0x',
-        value = '0x0',
+        value = BigInt(0),
         multiplier = 1.2, // 20% buffer by default
         priorityLevel = 'medium',
         customPriorityFee,
@@ -153,25 +150,27 @@ export function useGasEstimation() {
       // Use custom priority fee if provided
       const maxPriorityFeePerGas = customPriorityFee || feeData.maxPriorityFeePerGas;
       
-      // Calculate max fee per gas (base fee + priority fee)
-      const maxFeePerGas = feeData.baseFee.mul(2).add(maxPriorityFeePerGas);
+      // Calculate max fee per gas (base fee * 2 + priority fee)
+      const maxFeePerGas = (feeData.baseFee * BigInt(2)) + maxPriorityFeePerGas;
       
       // Estimate gas limit
-      let gasLimit: BigNumber;
+      let gasLimit: bigint;
       if (customEstimateGas) {
-        gasLimit = await customEstimateGas(provider);
+        gasLimit = await customEstimateGas(client);
       } else if (to) {
-        gasLimit = await provider.estimateGas({
+        const valueBigInt = typeof value === 'string' ? BigInt(value) : value;
+        gasLimit = await client.estimateGas({
+          account: client.account,
           to,
-          data,
-          value,
+          data: data as `0x${string}`,
+          value: valueBigInt,
         });
       } else {
         throw new Error('Either to address or custom estimateGas function must be provided');
       }
       
       // Apply multiplier to gas limit (with buffer)
-      const bufferedGasLimit = gasLimit.mul(Math.floor(multiplier * 100)).div(100);
+      const bufferedGasLimit = (gasLimit * BigInt(Math.floor(multiplier * 100))) / BigInt(100);
       
       // Estimate time (very rough estimate based on network)
       const estimatedTime = BLOCK_TIMES[network] * 2; // Assuming 2 blocks to be safe
@@ -195,22 +194,22 @@ export function useGasEstimation() {
     } finally {
       setIsLoading(false);
     }
-  }, [provider, getFeeData, network]);
+  }, [client, getFeeData, network]);
 
   // Get suggested gas settings without estimating a specific transaction
   const getSuggestedGasSettings = useCallback(async (): Promise<GasSettings> => {
-    if (!provider) {
-      throw new Error('Provider not available');
+    if (!client) {
+      throw new Error('Client not available');
     }
 
     try {
       const feeData = await getFeeData();
       
       // Default gas limit (can be overridden by the user)
-      const defaultGasLimit = BigNumber.from(21000); // Standard ETH transfer
+      const defaultGasLimit = BigInt(21000); // Standard ETH transfer
       
-      // Calculate max fee per gas (base fee + priority fee)
-      const maxFeePerGas = feeData.baseFee.mul(2).add(feeData.maxPriorityFeePerGas);
+      // Calculate max fee per gas (base fee * 2 + priority fee)
+      const maxFeePerGas = (feeData.baseFee * BigInt(2)) + feeData.maxPriorityFeePerGas;
       
       return {
         maxFeePerGas,
@@ -223,16 +222,16 @@ export function useGasEstimation() {
       console.error('Error getting suggested gas settings:', err);
       throw err instanceof Error ? err : new Error('Failed to get suggested gas settings');
     }
-  }, [provider, getFeeData, network]);
+  }, [client, getFeeData, network]);
 
   // Format gas price in gwei
-  const formatGwei = useCallback((value: BigNumber): string => {
-    return ethers.utils.formatUnits(value, 'gwei');
+  const formatGwei = useCallback((value: bigint): string => {
+    return viemFormatGwei(value);
   }, []);
 
-  // Parse gwei string to BigNumber
-  const parseGwei = useCallback((value: string): BigNumber => {
-    return ethers.utils.parseUnits(value, 'gwei');
+  // Parse gwei string to bigint
+  const parseGwei = useCallback((value: string): bigint => {
+    return viemParseGwei(value);
   }, []);
 
   return {

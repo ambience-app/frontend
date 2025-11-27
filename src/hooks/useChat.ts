@@ -1,111 +1,279 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { useQueryClient } from '@tanstack/react-query';
+import { useAppKitAccount } from '@reown/appkit/react';
+import { usePublicClient, useWalletClient } from 'wagmi';
+import { parseEther } from 'viem';
 import type { Message } from '@/types/message';
-import { useContract, useMessages } from '@/hooks/useContract';
+import { SecureContractClient } from '@/lib/security/contracts';
+import { CONTRACT_ADDRESSES } from '@/contracts/addresses';
+import { toast } from 'sonner';
 
+// Number of messages to fetch per page
 const MESSAGES_PER_PAGE = 20;
 
+interface ContractMessage {
+  sender: string;
+  content: string;
+  timestamp: number;
+  roomId: number;
+}
+
 export function useChat(roomId: string) {
-  const { address } = useAccount();
-  const queryClient = useQueryClient();
-  const contract = useContract();
+  // Use AppKit account first, fallback to wagmi
+  const { address: appkitAddress } = useAppKitAccount();
+  const { address: wagmiAddress } = useAccount();
+  const address = appkitAddress || wagmiAddress;
+  
+  const [isSending, setIsSending] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [contractClient, setContractClient] = useState<SecureContractClient | null>(null);
+  
+  const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient();
 
-  // Use the optimized message pagination
-  const {
-    data: messages,
-    isLoading: isLoadingMessages,
-    error: messagesError,
-    hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage,
-    refetch: refetchMessages,
-  } = useMessages(roomId, 1);
-
-  const isSending = useMemo(() => contract.loading, [contract.loading]);
-  const sendError = useMemo(() => contract.error, [contract.error]);
-
-  const sendMessage = useCallback(async (content: string) => {
-    if (!address) return;
-
+  // Initialize contract client
+  useEffect(() => {
+    if (!publicClient || !walletClient) return;
+    
     try {
-      await contract.sendMessage(parseInt(roomId), content);
-      // The optimistic update and cache invalidation are handled by the contract hook
+      const client = new SecureContractClient(publicClient.chain?.id as any || 8453);
+      if (walletClient) {
+        client.initializeWalletClient(walletClient as any);
+      }
+      setContractClient(client);
+    } catch (err) {
+      console.error('Failed to initialize contract client:', err);
+      setError('Failed to initialize Web3 client');
+    }
+  }, [publicClient, walletClient]);
+
+  // Convert contract message to app message format
+  const toMessage = (msg: ContractMessage, id: number): Message => ({
+    id: id.toString(),
+    sender: msg.sender,
+    content: msg.content,
+    timestamp: Number(msg.timestamp) * 1000, // Convert to milliseconds
+    roomId: msg.roomId.toString(),
+  });
+
+  // Send a new message to the chat room
+  const sendMessage = useCallback(async (content: string) => {
+    if (!address || !contractClient) {
+      setError('Wallet not connected');
+      return;
+    }
+
+    if (!content.trim()) {
+      setError('Message cannot be empty');
+      return;
+    }
+
+    const roomIdNum = parseInt(roomId, 10);
+    if (isNaN(roomIdNum)) {
+      setError('Invalid room ID');
+      return;
+    }
+
+    setIsSending(true);
+    setError(null);
+    
+    try {
+      // Send the message to the contract
+      const result = await contractClient.writeContract({
+        address: CONTRACT_ADDRESSES.celo.AMBIENCE_CHAT as `0x${string}`,
+        abi: [{
+          "inputs": [
+            { "name": "roomId", "type": "uint256" },
+            { "name": "content", "type": "string" }
+          ],
+          "name": "sendMessage",
+          "outputs": [{ "name": "", "type": "uint256" }],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        }],
+        functionName: 'sendMessage',
+        args: [BigInt(roomIdNum), content],
+      });
+
+      if (!result.success) {
+        throw new Error(result.error?.message || 'Failed to send message');
+      }
+
+      // Wait for transaction receipt
+      const receipt = await contractClient.waitForTransactionReceipt(
+        result.data as `0x${string}`
+      );
+
+      if (!receipt.success) {
+        throw new Error(receipt.error?.message || 'Transaction failed');
+      }
+
+      // Get the new message ID from the transaction receipt
+      const messageId = await contractClient.readContract({
+        address: CONTRACT_ADDRESSES.celo.AMBIENCE_CHAT as `0x${string}`,
+        abi: [{
+          "inputs": [],
+          "name": "getTotalMessages",
+          "outputs": [{ "name": "", "type": "uint256" }],
+          "stateMutability": "view",
+          "type": "function"
+        }],
+        functionName: 'getTotalMessages',
+        args: [],
+      });
+
+      if (messageId.success) {
+        // Fetch the new message
+        const messageResult = await contractClient.readContract({
+          address: CONTRACT_ADDRESSES.celo.AMBIENCE_CHAT as `0x${string}`,
+          abi: [{
+            "inputs": [{ "name": "messageId", "type": "uint256" }],
+            "name": "getMessage",
+            "outputs": [{
+              "components": [
+                { "name": "sender", "type": "address" },
+                { "name": "content", "type": "string" },
+                { "name": "timestamp", "type": "uint256" },
+                { "name": "roomId", "type": "uint256" }
+              ],
+              "internalType": "struct AmbienceChat.Message",
+              "name": "",
+              "type": "tuple"
+            }],
+            "stateMutability": "view",
+            "type": "function"
+          }],
+          functionName: 'getMessage',
+          args: [messageId.data as bigint - 1n], // Get the last message
+        });
+
+        if (messageResult.success) {
+          const newMessage = toMessage(messageResult.data as any, Number(messageId.data) - 1);
+          setMessages(prev => [newMessage, ...prev]);
+          toast.success('Message sent successfully');
+        }
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
-      throw error;
+      setError(error instanceof Error ? error.message : 'Failed to send message');
+      toast.error('Failed to send message');
+    } finally {
+      setIsSending(false);
     }
-  }, [address, roomId, contract]);
+  }, [address, contractClient, roomId]);
 
-  const createRoom = useCallback(async (roomName: string, isPrivate = false) => {
-    if (!address) return;
-
+  // Fetch messages for the current room
+  const fetchMessages = useCallback(async (page: number = 0) => {
+    if (!contractClient) return [];
+    
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      await contract.createRoom(roomName, isPrivate);
-      // Cache invalidation is handled by the contract hook
-    } catch (error) {
-      console.error('Failed to create room:', error);
-      throw error;
-    }
-  }, [address, contract]);
-
-  const joinRoom = useCallback(async (roomId: number) => {
-    if (!address) return;
-
-    try {
-      await contract.joinRoom(roomId);
-      // Cache invalidation is handled by the contract hook
-    } catch (error) {
-      console.error('Failed to join room:', error);
-      throw error;
-    }
-  }, [address, contract]);
-
-  const invalidateMessages = useCallback(() => {
-    contract.invalidateMessages(roomId);
-  }, [contract, roomId]);
-
-  // Batch multiple operations
-  const batchOperations = useCallback((operations: Array<{
-    type: 'sendMessage' | 'joinRoom' | 'createRoom';
-    data: { content?: string; roomId?: number; roomName?: string; isPrivate?: boolean };
-  }>) => {
-    const transactions = operations.map(op => {
-      switch (op.type) {
-        case 'sendMessage':
-          return {
-            functionName: 'sendMessage',
-            args: [BigInt(roomId), op.data.content || ''],
-          };
-        case 'joinRoom':
-          return {
-            functionName: 'addRoomMember',
-            args: [BigInt(op.data.roomId || 0), address],
-          };
-        case 'createRoom':
-          return {
-            functionName: 'createRoom',
-            args: [op.data.roomName || '', op.data.isPrivate || false],
-          };
-        default:
-          throw new Error(`Unknown operation type: ${op.type}`);
+      const roomIdNum = parseInt(roomId, 10);
+      if (isNaN(roomIdNum)) {
+        throw new Error('Invalid room ID');
       }
-    });
 
-    contract.batchTransactions(transactions);
-  }, [address, roomId, contract]);
+      // Get total messages in the room
+      const totalResult = await contractClient.readContract({
+        address: CONTRACT_ADDRESSES.celo.AMBIENCE_CHAT as `0x${string}`,
+        abi: [{
+          "inputs": [{ "name": "roomId", "type": "uint256" }],
+          "name": "getRoomMessageCount",
+          "outputs": [{ "name": "", "type": "uint256" }],
+          "stateMutability": "view",
+          "type": "function"
+        }],
+        functionName: 'getRoomMessageCount',
+        args: [BigInt(roomIdNum)],
+      });
+
+      if (!totalResult.success) {
+        throw new Error('Failed to fetch message count');
+      }
+
+      const totalMessages = Number(totalResult.data);
+      if (totalMessages === 0) return [];
+
+      // Calculate pagination
+      const start = Math.max(0, totalMessages - (page + 1) * MESSAGES_PER_PAGE);
+      const count = Math.min(MESSAGES_PER_PAGE, totalMessages - page * MESSAGES_PER_PAGE);
+
+      if (count <= 0) return [];
+
+      // Fetch messages for the current page
+      const messagesResult = await contractClient.readContract({
+        address: CONTRACT_ADDRESSES.celo.AMBIENCE_CHAT as `0x${string}`,
+        abi: [{
+          "inputs": [
+            { "name": "roomId", "type": "uint256" },
+            { "name": "offset", "type": "uint256" },
+            { "name": "limit", "type": "uint256" }
+          ],
+          "name": "getRoomMessages",
+          "outputs": [{
+            "components": [
+              { "name": "sender", "type": "address" },
+              { "name": "content", "type": "string" },
+              { "name": "timestamp", "type": "uint256" },
+              { "name": "roomId", "type": "uint256" }
+            ],
+            "internalType": "struct AmbienceChat.Message[]",
+            "name": "",
+            "type": "tuple[]"
+          }],
+          "stateMutability": "view",
+          "type": "function"
+        }],
+        functionName: 'getRoomMessages',
+        args: [BigInt(roomIdNum), BigInt(start), BigInt(count)],
+      });
+
+      if (!messagesResult.success) {
+        throw new Error('Failed to fetch messages');
+      }
+
+      // Convert and return messages
+      return (messagesResult.data as ContractMessage[])
+        .map((msg, i) => toMessage(msg, start + i))
+        .reverse(); // Show newest first
+    } catch (error) {
+      console.error('Failed to fetch messages:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch messages');
+      toast.error('Failed to load messages');
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  }, [contractClient, roomId]);
+
+  // Load initial messages
+  useEffect(() => {
+    if (!contractClient) return;
+    
+    const loadInitialMessages = async () => {
+      const initialMessages = await fetchMessages(0);
+      setMessages(initialMessages);
+    };
+    
+    loadInitialMessages();
+    
+    // Set up polling for new messages
+    const interval = setInterval(loadInitialMessages, 30000);
+    
+    return () => clearInterval(interval);
+  }, [contractClient, fetchMessages]);
 
   return {
     // State
     messages: messages || [],
     isLoading: isLoadingMessages,
     isSending,
-    sendError,
-    messagesError,
-    isConnected: contract.isConnected,
-    pendingBatches: contract.pendingBatches,
-
-    // Actions
+    isLoading,
+    error,
     sendMessage,
     createRoom,
     joinRoom,

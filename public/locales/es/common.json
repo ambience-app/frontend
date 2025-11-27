@@ -1,0 +1,40 @@
+{
+  "app": {
+    "title": "Ambience Chat",
+    "description": "Mensajería Descentralizada en Cadena",
+    "loading": "Cargando..."
+  },
+  "auth": {
+    "connect_wallet": "Conectar Billetera",
+    "disconnect": "Desconectar",
+    "copy_address": "Copiar Dirección",
+    "copied": "¡Copiado!"
+  },
+  "navigation": {
+    "home": "Inicio",
+    "chat": "Chat",
+    "profile": "Perfil",
+    "settings": "Configuración"
+  },
+  "theme": {
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema",
+    "toggle_theme": "Cambiar tema"
+  },
+  "language": {
+    "en": "Inglés",
+    "es": "Español",
+    "fr": "Francés",
+    "select_language": "Seleccionar idioma"
+  },
+  "chat": {
+    "send_message": "Envía un mensaje...",
+    "no_messages": "Aún no hay mensajes. ¡Comienza la conversación!",
+    "typing": "escribiendo..."
+  },
+  "errors": {
+    "something_went_wrong": "Algo salió mal. Por favor, inténtalo de nuevo.",
+    "network_error": "Error de red. Por favor, verifica tu conexión."
+  }
+}

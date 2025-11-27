@@ -2,14 +2,20 @@ import { memo, useMemo } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { useEnsName } from 'wagmi';
 import { shortenAddress } from '@/lib/utils';
-import type { Message } from '@/types/message';
+import type { Message, Reaction } from '@/types/message';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { useReactions } from '@/hooks/useReactions';
+import { ReactionButton } from './ReactionButton';
+import { EmojiPicker } from './EmojiPicker';
+import { useState } from 'react';
 
 interface MessageProps {
   message: Message;
   isCurrentUser?: boolean;
   className?: string;
+  onReaction?: (emoji: string) => Promise<void>;
+  isReacting?: boolean;
 }
 
 /**
@@ -23,6 +29,8 @@ const Message = memo<MessageProps>(({ message, isCurrentUser = false, className 
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false,
   });
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const { toggleReaction, isLoading } = useReactions();
 
   // Memoize computed values to prevent recalculation on re-renders
   const senderDisplay = useMemo(() => {
@@ -93,7 +101,30 @@ const Message = memo<MessageProps>(({ message, isCurrentUser = false, className 
             {timestamp}
           </span>
         </div>
-        <p className="text-sm">{message.content}</p>
+        <p className="text-sm mb-2">{message.content}</p>
+        
+        {/* Reactions */}
+        {message.reactions && message.reactions.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {message.reactions.map((reaction) => (
+              <ReactionButton
+                key={reaction.emoji}
+                reaction={reaction}
+                onReaction={handleReaction}
+              />
+            ))}
+          </div>
+        )}
+        
+        {/* Reaction picker */}
+        <div className={cn(
+          'absolute -bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity',
+          'flex items-center gap-1 bg-background rounded-full p-1 shadow-sm border',
+          isCurrentUser ? 'left-2' : 'right-2'
+        )}>
+          <EmojiPicker onSelect={handleReaction} />
+        </div>
+        
         {message.edited && (
           <div className="text-xs mt-1 opacity-70 italic">edited</div>
         )}

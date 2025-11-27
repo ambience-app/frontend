@@ -1,0 +1,66 @@
+name: Create Sentry Release
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ['v*']
+
+jobs:
+  release:
+    name: Create Sentry Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+      
+      - name: Install Sentry CLI
+        run: npm install @sentry/cli -g
+      
+      - name: Create Sentry release
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG || 'your-org' }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'frontend' }}
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=${GITHUB_SHA::8}
+          fi
+          
+          sentry-cli releases new $VERSION --project $SENTRY_PROJECT
+          sentry-cli releases set-commits $VERSION --auto
+          
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            sentry-cli releases finalize $VERSION
+          fi
+          
+          echo "SENTRY_RELEASE=$VERSION" >> $GITHUB_ENV
+      
+      - name: Upload source maps (staging)
+        if: github.ref == 'refs/heads/develop'
+        run: |
+          npm run build
+          sentry-cli sourcemaps inject --ext ts --ext tsx --ext js ./build
+          sentry-cli sourcemaps upload ./
+          sentry-cli releases deploys $SENTRY_RELEASE new -e staging
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG || 'your-org' }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'frontend' }}
+      
+      - name: Upload source maps (production)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          npm run build
+          sentry-cli sourcemaps inject --ext ts --ext tsx --ext js ./build
+          sentry-cli sourcemaps upload ./
+          sentry-cli releases deploys $SENTRY_RELEASE new -e production
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG || 'your-org' }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT || 'frontend' }}

@@ -53,11 +53,13 @@ export function useTransactionStatus(options: UseTransactionStatusOptions = {}) 
       }
     }
 
+    // Capture the current ref value in the cleanup function
+    const currentIntervalRefs = intervalRefs.current;
     return () => {
       mountedRef.current = false;
       // Clear all polling intervals on unmount
-      intervalRefs.current.forEach((interval) => clearInterval(interval));
-      intervalRefs.current.clear();
+      currentIntervalRefs.forEach((interval) => clearInterval(interval));
+      currentIntervalRefs.clear();
     };
   }, [persist]);
 
