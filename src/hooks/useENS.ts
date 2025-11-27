@@ -152,7 +152,11 @@ export function useENS() {
     }
   }, [provider]);
 
-  // Get ENS avatar
+  /**
+   * Get ENS avatar for either an ENS name or Ethereum address
+   * @param {string} nameOrAddress - ENS name or Ethereum address
+   * @returns {Promise<string | null>} Avatar URL or null if not found
+   */
   const getAvatar = useCallback(async (nameOrAddress: string): Promise<string | null> => {
     if (!provider) return null;
     
