@@ -1,0 +1,40 @@
+{
+  "app": {
+    "title": "Ambience Chat",
+    "description": "Decentralized Onchain Messaging",
+    "loading": "Loading..."
+  },
+  "auth": {
+    "connect_wallet": "Connect Wallet",
+    "disconnect": "Disconnect",
+    "copy_address": "Copy Address",
+    "copied": "Copied!"
+  },
+  "navigation": {
+    "home": "Home",
+    "chat": "Chat",
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "toggle_theme": "Toggle theme"
+  },
+  "language": {
+    "en": "English",
+    "es": "Spanish",
+    "fr": "French",
+    "select_language": "Select Language"
+  },
+  "chat": {
+    "send_message": "Send a message...",
+    "no_messages": "No messages yet. Start the conversation!",
+    "typing": "typing..."
+  },
+  "errors": {
+    "something_went_wrong": "Something went wrong. Please try again.",
+    "network_error": "Network error. Please check your connection."
+  }
+}
