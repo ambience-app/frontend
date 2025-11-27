@@ -4,11 +4,79 @@ import { useAccount } from 'wagmi';
 /**
  * useNotifications hook
  *
- * A hook that provides notification functionality.
- * It allows displaying notifications to the user, managing notification preferences,
- * and managing notification badge.
+ * A comprehensive hook for managing browser notifications, user preferences, and notification history.
+ * Provides functionality to display push notifications, manage preferences, track unread counts,
+ * and handle different types of notifications with audio support.
  *
- * @returns {Object} An object with functions to display notifications, manage notification preferences, and manage notification badge.
+ * Features:
+ * - Browser push notifications with permission management
+ * - Local notification history and management
+ * - User preference persistence (localStorage)
+ * - Audio notification support with configurable sounds
+ * - Badge count tracking for unread notifications
+ * - Multiple notification types (message, mention, reaction, system)
+ * - Automatic cleanup and memory management
+ *
+ * @example
+ * ```tsx
+ * // Basic usage
+ * const { 
+ *   notifications, 
+ *   unreadCount, 
+ *   preferences, 
+ *   addNotification, 
+ *   markAsRead 
+ * } = useNotifications();
+ *
+ * // Add a new notification
+ * const handleNewMessage = (message) => {
+ *   addNotification('message', 'New Message', `${message.sender} sent a message`);
+ * };
+ *
+ * // Update preferences
+ * const toggleSound = () => {
+ *   updatePreferences({ soundEnabled: !preferences.soundEnabled });
+ * };
+ *
+ * // Request permission
+ * const enableNotifications = async () => {
+ *   const granted = await requestNotificationPermission();
+ *   if (granted) {
+ *     console.log('Notifications enabled');
+ *   }
+ * };
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Complete notification setup
+ * const NotificationsBell = () => {
+ *   const { notifications, unreadCount, markAsRead } = useNotifications();
+ *   
+ *   return (
+ *     <div className="relative">
+ *       <Bell className="h-6 w-6" />
+ *       {unreadCount > 0 && (
+ *         <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+ *           {unreadCount}
+ *         </span>
+ *       )}
+ *     </div>
+ *   );
+ * };
+ * ```
+ *
+ * @returns {useNotificationsReturn} Object containing notification state and management functions
+ * @property {Notification[]} notifications - Array of all notifications
+ * @property {number} unreadCount - Count of unread notifications
+ * @property {NotificationPreferences} preferences - User notification preferences
+ * @property {boolean} hasPermission - Whether browser notification permission is granted
+ * @property {AddNotificationFunction} addNotification - Add a new notification
+ * @property {MarkAsReadFunction} markAsRead - Mark a specific notification as read
+ * @property {MarkAllAsReadFunction} markAllAsRead - Mark all notifications as read
+ * @property {ClearAllNotificationsFunction} clearAllNotifications - Clear all notifications
+ * @property {UpdatePreferencesFunction} updatePreferences - Update notification preferences
+ * @property {RequestPermissionFunction} requestNotificationPermission - Request browser permission
  */
 interface NotificationPreferences {
   pushEnabled: boolean;
