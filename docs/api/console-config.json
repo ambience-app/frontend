@@ -1,0 +1,590 @@
+{
+  "title": "Ambience Chat API Console",
+  "description": "Interactive API testing interface for Ambience Chat",
+  "type": "object",
+  "properties": {
+    "apiKey": {
+      "type": "string",
+      "title": "RPC API Key",
+      "description": "Your Alchemy API key for Base network access",
+      "default": "demo",
+      "x-console": {
+        "type": "input",
+        "placeholder": "Enter your Alchemy API key"
+      }
+    },
+    "network": {
+      "type": "string",
+      "title": "Network",
+      "description": "Blockchain network to connect to",
+      "enum": [
+        "base-mainnet",
+        "base-sepolia"
+      ],
+      "default": "base-sepolia",
+      "x-console": {
+        "type": "select",
+        "options": [
+          {"value": "base-mainnet", "label": "Base Mainnet"},
+          {"value": "base-sepolia", "label": "Base Sepolia (Testnet)"}
+        ]
+      }
+    },
+    "walletAddress": {
+      "type": "string",
+      "title": "Wallet Address",
+      "description": "Your Ethereum wallet address",
+      "default": "",
+      "x-console": {
+        "type": "input",
+        "placeholder": "0x1234567890abcdef..."
+      }
+    },
+    "privateKey": {
+      "type": "string",
+      "title": "Private Key",
+      "description": "Wallet private key for signing transactions (development only)",
+      "default": "",
+      "x-console": {
+        "type": "password",
+        "placeholder": "Enter private key (optional)"
+      }
+    },
+    "gasPrice": {
+      "type": "number",
+      "title": "Gas Price (Gwei)",
+      "description": "Gas price in Gwei for transactions",
+      "default": 20,
+      "x-console": {
+        "type": "input",
+        "step": "0.1"
+      }
+    },
+    "contractAddress": {
+      "type": "string",
+      "title": "Contract Address",
+      "description": "Ambience Chat contract address",
+      "default": "0x23cdaec75b1c3e5d26db4675ecb3c9042a780a0e",
+      "x-console": {
+        "type": "input",
+        "readonly": true
+      }
+    },
+    "websocketUrl": {
+      "type": "string",
+      "title": "WebSocket URL",
+      "description": "WebSocket endpoint for real-time events",
+      "default": "ws://localhost:3000/ws",
+      "x-console": {
+        "type": "input",
+        "placeholder": "ws://localhost:3000/ws"
+      }
+    },
+    "ipfsGateway": {
+      "type": "string",
+      "title": "IPFS Gateway",
+      "description": "IPFS gateway for file access",
+      "default": "https://ipfs.io/ipfs/",
+      "x-console": {
+        "type": "input"
+      }
+    }
+  },
+  "endpoints": [
+    {
+      "id": "send-message",
+      "title": "Send Message",
+      "method": "POST",
+      "path": "/web3/contract/sendMessage",
+      "description": "Send a message to a chat room",
+      "parameters": {
+        "roomId": {
+          "type": "number",
+          "title": "Room ID",
+          "description": "ID of the room to send message to",
+          "required": true,
+          "x-console": {
+            "type": "input",
+            "placeholder": "1"
+          }
+        },
+        "content": {
+          "type": "string",
+          "title": "Message Content",
+          "description": "Content of the message",
+          "required": true,
+          "x-console": {
+            "type": "textarea",
+            "placeholder": "Hello, World!",
+            "maxLength": 1000
+          }
+        }
+      },
+      "examples": [
+        {
+          "title": "Send Message to General Room",
+          "request": {
+            "roomId": 1,
+            "content": "Hello, everyone!"
+          },
+          "response": {
+            "success": true,
+            "data": {
+              "transactionHash": "0x1234567890abcdef...",
+              "messageId": 12345
+            },
+            "meta": {
+              "gasUsed": "120000",
+              "requestId": "req_abc123"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "create-room",
+      "title": "Create Room",
+      "method": "POST",
+      "path": "/web3/contract/createRoom",
+      "description": "Create a new chat room",
+      "parameters": {
+        "name": {
+          "type": "string",
+          "title": "Room Name",
+          "description": "Name of the new room",
+          "required": true,
+          "x-console": {
+            "type": "input",
+            "placeholder": "My Chat Room",
+            "maxLength": 100
+          }
+        },
+        "isPrivate": {
+          "type": "boolean",
+          "title": "Private Room",
+          "description": "Whether the room should be private",
+          "required": false,
+          "x-console": {
+            "type": "checkbox",
+            "default": false
+          }
+        }
+      },
+      "examples": [
+        {
+          "title": "Create Public Room",
+          "request": {
+            "name": "General Chat",
+            "isPrivate": false
+          },
+          "response": {
+            "success": true,
+            "data": {
+              "roomId": 2,
+              "transactionHash": "0xabcdef123456..."
+            },
+            "meta": {
+              "gasUsed": "150000"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "get-messages",
+      "title": "Get Room Messages",
+      "method": "GET",
+      "path": "/web3/contract/getRoomMessages",
+      "description": "Retrieve messages from a room with pagination",
+      "parameters": {
+        "roomId": {
+          "type": "number",
+          "title": "Room ID",
+          "description": "ID of the room to get messages from",
+          "required": true,
+          "x-console": {
+            "type": "input",
+            "placeholder": "1"
+          }
+        },
+        "offset": {
+          "type": "number",
+          "title": "Offset",
+          "description": "Starting position (0 = newest first)",
+          "required": true,
+          "x-console": {
+            "type": "input",
+            "placeholder": "0",
+            "default": 0
+          }
+        },
+        "limit": {
+          "type": "number",
+          "title": "Limit",
+          "description": "Number of messages to retrieve",
+          "required": true,
+          "x-console": {
+            "type": "input",
+            "placeholder": "20",
+            "default": 20,
+            "min": 1,
+            "max": 100
+          }
+        }
+      },
+      "examples": [
+        {
+          "title": "Get Latest 20 Messages",
+          "request": {
+            "roomId": 1,
+            "offset": 0,
+            "limit": 20
+          },
+          "response": {
+            "success": true,
+            "data": [
+              {
+                "id": "12345",
+                "sender": "0x1234567890abcdef...",
+                "content": "Hello, World!",
+                "timestamp": 1634567890,
+                "roomId": 1
+              }
+            ],
+            "meta": {
+              "requestId": "req_def456"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "set-username",
+      "title": "Set Username",
+      "method": "POST",
+      "path": "/web3/contract/setUsername",
+      "description": "Set or update user profile username",
+      "parameters": {
+        "username": {
+          "type": "string",
+          "title": "Username",
+          "description": "New username (alphanumeric + underscore)",
+          "required": true,
+          "x-console": {
+            "type": "input",
+            "placeholder": "john_doe",
+            "pattern": "^[a-zA-Z0-9_]+$",
+            "minLength": 3,
+            "maxLength": 50
+          }
+        }
+      },
+      "examples": [
+        {
+          "title": "Set Username",
+          "request": {
+            "username": "john_doe"
+          },
+          "response": {
+            "success": true,
+            "data": {
+              "transactionHash": "0x7890abcdef123..."
+            },
+            "meta": {
+              "gasUsed": "100000"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "websocket-connect",
+      "title": "WebSocket Connection",
+      "method": "WebSocket",
+      "path": "/ws/connect",
+      "description": "Establish WebSocket connection for real-time events",
+      "parameters": {
+        "rooms": {
+          "type": "array",
+          "title": "Subscribe to Rooms",
+          "description": "List of room IDs to subscribe to",
+          "required": false,
+          "x-console": {
+            "type": "input",
+            "placeholder": "1,2,3",
+            "helper": "Comma-separated list of room IDs"
+          }
+        }
+      },
+      "examples": [
+        {
+          "title": "Connect and Subscribe",
+          "request": {
+            "type": "connection_init",
+            "payload": {
+              "userId": "0x1234567890abcdef...",
+              "roomIds": [1, 2],
+              "clientInfo": {
+                "version": "1.0.0",
+                "platform": "web"
+              }
+            }
+          },
+          "response": {
+            "type": "connection_ack",
+            "payload": {
+              "connectionId": "conn_abc123",
+              "subscribedRooms": [1, 2],
+              "serverTime": 1634567890,
+              "rateLimits": {
+                "messages": 30,
+                "interval": 60000
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "get-room-info",
+      "title": "Get Room Information",
+      "method": "GET",
+      "path": "/web3/contract/getRoom",
+      "description": "Retrieve information about a specific room",
+      "parameters": {
+        "roomId": {
+          "type": "number",
+          "title": "Room ID",
+          "description": "ID of the room to query",
+          "required": true,
+          "x-console": {
+            "type": "input",
+            "placeholder": "1"
+          }
+        }
+      },
+      "examples": [
+        {
+          "title": "Get Room Details",
+          "request": {
+            "roomId": 1
+          },
+          "response": {
+            "success": true,
+            "data": {
+              "id": 1,
+              "name": "General Chat",
+              "owner": "0x1234567890abcdef...",
+              "isPrivate": false,
+              "createdAt": 1634567890,
+              "messageCount": 150
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "check-username",
+      "title": "Check Username Availability",
+      "method": "GET",
+      "path": "/web3/contract/usernameTaken",
+      "description": "Check if a username is already taken",
+      "parameters": {
+        "username": {
+          "type": "string",
+          "title": "Username",
+          "description": "Username to check",
+          "required": true,
+          "x-console": {
+            "type": "input",
+            "placeholder": "john_doe"
+          }
+        }
+      },
+      "examples": [
+        {
+          "title": "Check Username",
+          "request": {
+            "username": "john_doe"
+          },
+          "response": {
+            "success": true,
+            "data": {
+              "available": false,
+              "taken": true
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "webhookEvents": [
+    {
+      "event": "message_sent",
+      "description": "Emitted when a new message is sent",
+      "payload": {
+        "messageId": "number",
+        "roomId": "number",
+        "sender": "address",
+        "username": "string",
+        "content": "string",
+        "timestamp": "number",
+        "transactionHash": "string"
+      }
+    },
+    {
+      "event": "room_created",
+      "description": "Emitted when a new room is created",
+      "payload": {
+        "roomId": "number",
+        "name": "string",
+        "owner": "address",
+        "isPrivate": "boolean",
+        "createdAt": "number",
+        "messageCount": "number"
+      }
+    },
+    {
+      "event": "user_joined",
+      "description": "Emitted when a user connects to WebSocket",
+      "payload": {
+        "userId": "address",
+        "username": "string",
+        "rooms": "array",
+        "timestamp": "number"
+      }
+    }
+  ],
+  "codeExamples": {
+    "javascript": {
+      "sendMessage": `// Send a message to a chat room
+const { createPublicClient, http } = require('viem')
+const { base } = require('viem/chains')
+
+const publicClient = createPublicClient({
+  chain: base,
+  transport: http('https://base-mainnet.g.alchemy.com/v2/YOUR_API_KEY'),
+})
+
+// Send message
+const txHash = await publicClient.writeContract({
+  address: '0x23cdaec75b1c3e5d26db4675ecb3c9042a780a0e',
+  abi: contractABI,
+  functionName: 'sendMessage',
+  args: [1n, 'Hello, World!'],
+})
+
+// Wait for confirmation
+const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
+console.log('Message sent:', receipt.transactionHash)`,
+      "getMessages": `// Get messages from a room
+const messages = await publicClient.readContract({
+  address: '0x23cdaec75b1c3e5d26db4675ecb3c9042a780a0e',
+  abi: contractABI,
+  functionName: 'getRoomMessages',
+  args: [1n, 0n, 20n], // roomId, offset, limit
+})
+
+console.log('Messages:', messages)`,
+      "websocket": `// WebSocket connection for real-time updates
+const ws = new WebSocket('wss://your-domain.com/ws')
+
+ws.onopen = () => {
+  // Subscribe to room updates
+  ws.send(JSON.stringify({
+    type: 'subscribe_room',
+    payload: { roomId: 1 },
+    timestamp: Math.floor(Date.now() / 1000)
+  }))
+}
+
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data)
+  
+  switch (message.type) {
+    case 'message_sent':
+      console.log('New message:', message.payload)
+      break
+    case 'room_created':
+      console.log('New room created:', message.payload)
+      break
+  }
+}`
+    },
+    "python": {
+      "sendMessage": `# Send a message using web3.py
+from web3 import Web3
+
+w3 = Web3(Web3.HTTPProvider('https://base-mainnet.g.alchemy.com/v2/YOUR_API_KEY'))
+
+# Contract instance
+contract = w3.eth.contract(
+    address='0x23cdaec75b1c3e5d26db4675ecb3c9042a780a0e',
+    abi=contract_abi
+)
+
+# Send message
+tx_hash = contract.functions.sendMessage(1, 'Hello, World!').transact({
+    'from': wallet_address,
+    'gas': 120000
+})
+
+# Wait for confirmation
+tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+print(f'Message sent: {tx_receipt.transactionHash.hex()}')`,
+      "getMessages": `# Get messages from a room
+messages = contract.functions.getRoomMessages(1, 0, 20).call()
+print(f'Messages: {messages}')`
+    },
+    "curl": {
+      "getRoomInfo": `# Get room information
+curl -X GET "https://api.ambience.chat/web3/contract/getRoom?roomId=1" \\
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \\
+  -H "Content-Type: application/json"`,
+      "checkUsername": `# Check username availability
+curl -X GET "https://api.ambience.chat/web3/contract/usernameTaken?username=john_doe" \\
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \\
+  -H "Content-Type: application/json"`
+    }
+  },
+  "testing": {
+    "testAccounts": [
+      {
+        "network": "base-sepolia",
+        "address": "0x742d35Cc6634C0532925a3b8D3B35E0a0d0a8b10",
+        "label": "Test Account 1"
+      },
+      {
+        "network": "base-sepolia",
+        "address": "0x8ba1f109551bD432803012645Hac136c7C1A30b4",
+        "label": "Test Account 2"
+      }
+    ],
+    "testRooms": [
+      {
+        "id": 1,
+        "name": "General Chat",
+        "description": "Main discussion room"
+      },
+      {
+        "id": 2,
+        "name": "Dev Chat",
+        "description": "Developer discussions"
+      }
+    ],
+    "testMessages": [
+      "Hello, World!",
+      "Testing the API",
+      "This is a test message",
+      "Welcome to Ambience Chat!"
+    ]
+  },
+  "sdk": {
+    "npm": {
+      "name": "@ambience-chat/sdk",
+      "version": "1.0.0",
+      "description": "Official SDK for Ambience Chat API",
+      "repository": "https://github.com/ambience-chat/sdk"
+    }
+  }
+}

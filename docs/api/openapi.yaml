@@ -1,0 +1,444 @@
+openapi: 3.0.3
+info:
+  title: Ambience Chat API
+  description: |
+    Comprehensive API documentation for Ambience Chat - a Web3 decentralized chat application built on Base blockchain.
+    
+    This API provides access to chat rooms, messaging, user profiles, and real-time communications through a combination of:
+    - **Smart Contract Functions**: On-chain chat interactions via blockchain
+    - **WebSocket API**: Real-time messaging and presence
+    - **External Integrations**: IPFS, ENS, and gas estimation
+    
+    ## Base Information
+    - **Blockchain Network**: Base (Mainnet & Sepolia Testnet)
+    - **Smart Contract**: AmbienceChat
+    - **Version**: 1.0.0
+    - **Contact**: Dev Team
+    
+  version: 1.0.0
+  contact:
+    name: Ambience Chat Dev Team
+  license:
+    name: MIT
+
+servers:
+  - url: https://base-mainnet.g.alchemy.com/v2/{apiKey}
+    description: Base Mainnet RPC Endpoint
+    variables:
+      apiKey:
+        default: demo
+        description: Alchemy API key for Base mainnet access
+  - url: https://base-sepolia.g.alchemy.com/v2/{apiKey}
+    description: Base Sepolia Testnet RPC Endpoint  
+    variables:
+      apiKey:
+        default: demo
+        description: Alchemy API key for Base Sepolia testnet access
+
+security:
+  - ApiKeyAuth: []
+
+tags:
+  - name: Smart Contract
+    description: Smart contract interaction endpoints for chat functionality
+  - name: WebSocket
+    description: Real-time messaging and presence events
+  - name: User Management
+    description: User profile and authentication endpoints
+  - name: File Storage
+    description: IPFS file upload and retrieval
+  - name: Rate Limiting
+    description: API rate limiting information
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: RPC API key for blockchain access
+  
+  schemas:
+    Address:
+      type: string
+      pattern: '^0x[a-fA-F0-9]{40}$'
+      description: Ethereum address format
+    
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique message identifier
+        sender:
+          $ref: '#/components/schemas/Address'
+        content:
+          type: string
+          maxLength: 1000
+          description: Message content
+        timestamp:
+          type: integer
+          format: int64
+          description: Unix timestamp in seconds
+        roomId:
+          type: integer
+          format: int64
+          description: Room identifier
+    
+    Room:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Room identifier
+        name:
+          type: string
+          maxLength: 100
+          description: Room name
+        owner:
+          $ref: '#/components/schemas/Address'
+        isPrivate:
+          type: boolean
+          description: Whether room is private
+        createdAt:
+          type: integer
+          format: int64
+          description: Unix timestamp when room was created
+        messageCount:
+          type: integer
+          format: int64
+          description: Number of messages in room
+    
+    UserProfile:
+      type: object
+      properties:
+        address:
+          $ref: '#/components/schemas/Address'
+        username:
+          type: string
+          maxLength: 50
+          description: User's display name
+        isRegistered:
+          type: boolean
+          description: Whether user profile exists
+    
+    TransactionHash:
+      type: string
+      pattern: '^0x[a-fA-F0-9]{64}$'
+      description: Blockchain transaction hash
+    
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: Error code
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+    
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether request was successful
+        data:
+          type: object
+          description: Response data
+        error:
+          $ref: '#/components/schemas/Error'
+        meta:
+          type: object
+          properties:
+            requestId:
+              type: string
+            timestamp:
+              type: integer
+              format: int64
+            gasUsed:
+              type: string
+              description: Gas used for transaction
+
+paths:
+  /web3/contract/sendMessage:
+    post:
+      tags:
+        - Smart Contract
+      summary: Send Message to Room
+      description: |
+        Send a message to a chat room via smart contract interaction.
+        
+        This is a blockchain transaction that will be recorded on-chain.
+        The transaction must be confirmed before the message appears in the room.
+      
+      operationId: sendMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - roomId
+                - content
+              properties:
+                roomId:
+                  type: integer
+                  format: int64
+                  minimum: 0
+                  description: Target room ID
+                content:
+                  type: string
+                  maxLength: 1000
+                  minLength: 1
+                  description: Message content
+      responses:
+        '200':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          transactionHash:
+                            $ref: '#/components/schemas/TransactionHash'
+                          messageId:
+                            type: integer
+                            format: int64
+                            description: Generated message ID
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /web3/contract/createRoom:
+    post:
+      tags:
+        - Smart Contract
+      summary: Create New Room
+      description: Create a new chat room on the blockchain.
+      operationId: createRoom
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                  description: Room name
+                isPrivate:
+                  type: boolean
+                  default: false
+                  description: Whether room is private
+      responses:
+        '200':
+          description: Room created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          roomId:
+                            type: integer
+                            format: int64
+                          transactionHash:
+                            $ref: '#/components/schemas/TransactionHash'
+
+  /web3/contract/getRoomMessages:
+    get:
+      tags:
+        - Smart Contract
+      summary: Get Paginated Room Messages
+      description: Retrieve messages from a specific room with pagination support.
+      operationId: getRoomMessages
+      parameters:
+        - name: roomId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+        - name: offset
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            description: Starting position for messages
+        - name: limit
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Number of messages to retrieve
+      responses:
+        '200':
+          description: Messages retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Message'
+
+  /web3/contract/setUsername:
+    post:
+      tags:
+        - User Management
+      summary: Set User Profile Username
+      description: Set or update the user's display username on the blockchain.
+      operationId: setUsername
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+              properties:
+                username:
+                  type: string
+                  pattern: '^[a-zA-Z0-9_]+$'
+                  minLength: 3
+                  maxLength: 50
+                  description: Username (alphanumeric and underscore only)
+      responses:
+        '200':
+          description: Username set successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          transactionHash:
+                            $ref: '#/components/schemas/TransactionHash'
+
+  /ws/connect:
+    get:
+      tags:
+        - WebSocket
+      summary: WebSocket Connection
+      description: |
+        Establish WebSocket connection for real-time messaging and presence updates.
+        
+        **Connection URL**: `wss://your-domain/ws`
+        
+        **Supported Events**:
+        - `message` - New messages in subscribed rooms
+        - `room_update` - Room membership changes
+        - `presence` - User online/offline status
+        - `error` - Connection or protocol errors
+      operationId: websocketConnect
+      responses:
+        '101':
+          description: WebSocket upgrade successful
+
+  /rate-limit:
+    get:
+      tags:
+        - Rate Limiting
+      summary: Get Rate Limit Status
+      description: Check current rate limit status and remaining requests.
+      operationId: getRateLimitStatus
+      responses:
+        '200':
+          description: Rate limit information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  limit:
+                    type: integer
+                    description: Request limit per interval
+                  remaining:
+                    type: integer
+                    description: Remaining requests
+                  reset:
+                    type: integer
+                    format: int64
+                    description: Reset timestamp
+
+x-rate-limits:
+  # Rate limiting configuration
+  - category: "contract_write"
+    limit: 500
+    interval: "1m"
+    description: "Smart contract write operations"
+  - category: "contract_read" 
+    limit: 1000
+    interval: "1m"
+    description: "Smart contract read operations"
+  - category: "websocket_messages"
+    limit: 30
+    interval: "1m"
+    description: "WebSocket messages per connection"
+
+x-networks:
+  - name: "Base Mainnet"
+    chainId: 8453
+    rpcUrl: "https://base-mainnet.g.alchemy.com/v2/{apiKey}"
+    contractAddress: "0x23cdaec75b1c3e5d26db4675ecb3c9042a780a0e"
+  - name: "Base Sepolia"
+    chainId: 84532
+    rpcUrl: "https://base-sepolia.g.alchemy.com/v2/{apiKey}"
+    contractAddress: "0x23cdaec75b1c3e5d26db4675ecb3c9042a780a0e"
+
+x-features:
+  - name: "Decentralized Chat"
+    description: "Messages stored on blockchain for immutability"
+  - name: "Real-time Updates"
+    description: "WebSocket for live messaging"
+  - name: "User Profiles"
+    description: "On-chain user profile management"
+  - name: "Room Management"
+    description: "Create and manage chat rooms"
+  - name: "Rate Limiting"
+    description: "Built-in rate limiting for all endpoints"
+  - name: "IPFS Integration"
+    description: "File storage via IPFS"
