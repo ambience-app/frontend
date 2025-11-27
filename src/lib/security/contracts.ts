@@ -3,13 +3,11 @@
  * Provides safe wrappers for all blockchain interactions with validation and error handling
  */
 
-import { Address, Abi, createPublicClient, createWalletClient, http, formatEther, parseEther } from 'viem';
-import { mainnet, base, baseSepolia } from 'viem/chains';
-import { useAccount, usePublicClient, useWalletClient } from 'wagmi';
+import { Address, Abi, createPublicClient, createWalletClient, http } from 'viem';
+import { base, baseSepolia } from 'viem/chains';
 import { CONTRACT_ADDRESSES } from '@/contracts/addresses';
-import { createRateLimitedFunction, RATE_LIMITS } from '@/utils/rateLimiter';
-import { createSafeError, handleContractError, SafeError, ApiResponse } from '@/lib/security/errors';
-import { ethereumAddressSchema } from '@/lib/validation/user';
+import { createRateLimitedFunction } from '@/utils/rateLimiter';
+import { createSafeError, SafeError, ApiResponse } from '@/lib/security/errors';
 
 // Network configuration
 const SUPPORTED_NETWORKS = {
@@ -37,7 +35,7 @@ export interface SecureContractCall {
   address: Address;
   abi: Abi;
   functionName: string;
-  args: any[];
+  args: unknown[];
   value?: bigint;
   gasLimit?: bigint;
   gasPrice?: bigint;
@@ -48,7 +46,7 @@ export interface SecureContractRead {
   address: Address;
   abi: Abi;
   functionName: string;
-  args: any[];
+  args: unknown[];
   chainId?: NetworkId;
 }
 
@@ -429,7 +427,7 @@ export const ContractUtils = {
    */
   createSafeCall(params: Partial<SecureContractCall> & {
     functionName: string;
-    args: any[];
+    args: unknown[];
   }): SecureContractCall {
     const { validateTransaction } = ContractUtils;
     const txValidation = validateTransaction(params.value, params.gasLimit);

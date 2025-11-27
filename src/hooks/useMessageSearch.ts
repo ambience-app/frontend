@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Message } from '@/types/message';
 import { Address } from '@/types';
+import { resolveENSName } from '@/lib/ens';
 
 interface SearchOptions {
   query: string;
@@ -56,9 +57,64 @@ const useMessageSearch = (
     setCurrentPage(1);
   }, [options.query, options.sender, options.roomId, options.fromDate, options.toDate]);
 
+  // State for resolved ENS addresses
+  const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
+  const [isResolving, setIsResolving] = useState(false);
+  const [resolveError, setResolveError] = useState<string | null>(null);
+
+  // Resolve ENS name to address when sender changes
+  useEffect(() => {
+    const resolveENS = async () => {
+      if (!options.sender) {
+        setResolvedAddress(null);
+        return;
+      }
+
+      // Check if it's already an address
+      if (/^0x[a-fA-F0-9]{40}$/.test(options.sender)) {
+        setResolvedAddress(options.sender);
+        return;
+      }
+
+      // Try to resolve ENS name
+      setIsResolving(true);
+      setResolveError(null);
+      try {
+        const address = await resolveENSName(options.sender);
+        if (address) {
+          setResolvedAddress(address);
+        } else {
+          setResolvedAddress(null);
+          setResolveError('Could not resolve ENS name');
+        }
+      } catch (error) {
+        console.error('Error resolving ENS:', error);
+        setResolvedAddress(null);
+        setResolveError('Error resolving ENS name');
+      } finally {
+        setIsResolving(false);
+      }
+    };
+
+    resolveENS();
+  }, [options.sender]);
+
   // Memoize the search results to avoid recalculating on every render
   const searchResults = useMemo<SearchResult>(() => {
-    if (!options.query && !options.sender && !options.roomId && !options.fromDate && !options.toDate) {
+    if (isResolving) {
+      return {
+        messages: [],
+        total: 0,
+        pageInfo: {
+          currentPage,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      };
+    }
+
+    if (!options.query && !options.sender && !resolvedAddress && !options.roomId && !options.fromDate && !options.toDate) {
       // If no search criteria, return all messages with pagination
       const totalPages = Math.ceil(messages.length / pageSize);
       const startIndex = (currentPage - 1) * pageSize;
@@ -91,13 +147,17 @@ const useMessageSearch = (
 
       // Filter messages based on search criteria
       const filtered = messages.filter((message) => {
-        // Filter by sender
+        // Filter by sender (supports both address and ENS name)
         if (options.sender) {
           const senderAddress = typeof message.sender === 'string' 
             ? message.sender 
             : (message.sender as any).address || '';
           
-          if (senderAddress.toLowerCase() !== options.sender?.toLowerCase()) {
+          // Check against both the original sender input and resolved address
+          const matchAddress = senderAddress.toLowerCase() === options.sender?.toLowerCase();
+          const matchResolved = resolvedAddress ? senderAddress.toLowerCase() === resolvedAddress.toLowerCase() : false;
+          
+          if (!matchAddress && !matchResolved) {
             return false;
           }
         }
@@ -187,8 +247,8 @@ const useMessageSearch = (
     ...searchResults,
     
     // Loading and error states
-    isSearching,
-    error: searchError,
+    isSearching: isSearching || isResolving,
+    error: searchError || resolveError,
     
     // Pagination controls
     nextPage: goToNextPage,

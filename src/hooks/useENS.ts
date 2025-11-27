@@ -1,18 +1,14 @@
+// src/hooks/useENS.ts
 import { useState, useEffect, useCallback } from 'react';
-import { useProvider } from '@reown/appkit/react';
-import { ethers } from 'ethers';
+import { Address, isAddress } from 'viem';
+import { mainnet } from 'viem/chains';
+import { useAccount, usePublicClient } from 'wagmi';
 
 type ENSCache = {
-  [key: string]: {
-    name?: string | null;
-    address?: string | null;
-    avatar?: string | null;
-    timestamp: number;
-  };
+  [key: string]: string | null;
 };
 
-// Cache TTL in milliseconds (5 minutes)
-const CACHE_TTL = 5 * 60 * 1000;
+const cache: ENSCache = {};
 
 // In-memory cache
 let cache: ENSCache = {};
@@ -129,26 +125,16 @@ export function useENS() {
     }
 
     try {
-      setIsLoading(true);
-      setError(null);
-      
-      const name = await provider.lookupAddress(address);
-      
-      // Update cache
-      cache[cacheKey] = {
-        name,
-        address,
-        timestamp: Date.now(),
-      };
-      
-      cleanCache();
+      setLoading(true);
+      const name = await provider.lookupAddress(addr);
+      cache[addr] = name;
       return name;
     } catch (err) {
-      console.error('Error looking up address:', err);
-      setError(err instanceof Error ? err : new Error('Failed to lookup address'));
+      console.error('Error resolving ENS:', err);
+      setError(err instanceof Error ? err : new Error(String(err)));
       return null;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   }, [provider]);
 
@@ -165,14 +151,10 @@ export function useENS() {
       return cache[cacheKey].avatar || null;
     }
 
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      // If it's an address, try to resolve to name first
-      let name = nameOrAddress;
-      if (ethers.isAddress(nameOrAddress)) {
-        name = (await lookupAddress(nameOrAddress)) || nameOrAddress;
+    const fetchENS = async () => {
+      const name = await resolveENS(address);
+      if (name) {
+        setEnsName(name);
       }
       
       const avatar = await provider.getAvatar(name);
@@ -244,14 +226,8 @@ export function useENS() {
     }
   }, [provider, lookupAddress, getAvatar]);
 
-  return {
-    resolveName,
-    lookupAddress,
-    getAvatar,
-    getENSData,
-    isLoading,
-    error,
-  };
-}
+    fetchENS();
+  }, [address, resolveENS]);
 
-export default useENS;
+  return { ensName, loading, error };
+}

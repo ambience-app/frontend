@@ -1,0 +1,24 @@
+{
+  "$schema": "https://unpkg.com/@bundlewatch/cli@1.0.0/dist/config.schema.json",
+  "files": [
+    {
+      "path": ".next/static/chunks/**/*.js",
+      "maxSize": "500 kB"
+    },
+    {
+      "path": ".next/static/css/**/*.css",
+      "maxSize": "100 kB"
+    },
+    {
+      "path": ".next/static/media/**/*",
+      "maxSize": "1 MB"
+    }
+  ],
+  "ci": {
+    "trackBranches": ["main", "develop"],
+    "repoOwner": "ambience-app",
+    "repoName": "frontend",
+    "trackPullRequest": true,
+    "baseBranch": "main"
+  }
+}

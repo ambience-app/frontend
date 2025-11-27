@@ -9,19 +9,27 @@ export function useProfile() {
   /** ---------------------------
    * Get user profile
    * -------------------------- */
+  const { data: profileData, refetch: refetchContract } = useReadContract({
+    ...profileContract,
+    functionName: "getProfile",
+    address,
+    query: {
+      enabled: !!address,
+    }
+  });
+
   const {
     data: profile,
     isLoading: loadingProfile,
+    error,
     refetch: refetchProfile
   } = useQuery({
     queryKey: ["profile", address],
     enabled: !!address,
     queryFn: async () => {
-      return await useReadContract({
-        ...profileContract,
-        functionName: "getProfile",
-        args: [address]
-      });
+      if (!address) return null;
+      const result = await refetchContract();
+      return result.data;
     }
   });
 

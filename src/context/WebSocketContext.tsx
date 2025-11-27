@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+'use client';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from 'react';
 import { websocket } from '@/lib/websocket';
 
 type WebSocketContextType = {
@@ -7,7 +14,9 @@ type WebSocketContextType = {
   reconnect: () => Promise<void>;
 };
 
-const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined);
+const WebSocketContext = createContext<WebSocketContextType | undefined>(
+  undefined
+);
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
@@ -18,9 +27,9 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     setError(null);
   };
 
-  const handleDisconnect = () => {
-    setIsConnected(false);
-  };
+  // const handleDisconnect = () => {
+  //   setIsConnected(false);
+  // };
 
   const handleError = (error: Error) => {
     console.error('WebSocket error:', error);
@@ -32,7 +41,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       setError(null);
       await websocket.connect();
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to reconnect');
+      const error =
+        err instanceof Error ? err : new Error('Failed to reconnect');
       handleError(error);
       throw error;
     }
@@ -45,7 +55,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         await websocket.connect();
         handleConnect();
       } catch (err) {
-        const error = err instanceof Error ? err : new Error('Failed to connect');
+        const error =
+          err instanceof Error ? err : new Error('Failed to connect');
         handleError(error);
       }
     };

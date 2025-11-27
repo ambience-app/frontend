@@ -1,0 +1,40 @@
+{
+  "app": {
+    "title": "Ambience Chat",
+    "description": "Messagerie Décentralisée sur Chaîne",
+    "loading": "Chargement..."
+  },
+  "auth": {
+    "connect_wallet": "Connecter le Portefeuille",
+    "disconnect": "Déconnexion",
+    "copy_address": "Copier l'Adresse",
+    "copied": "Copié !"
+  },
+  "navigation": {
+    "home": "Accueil",
+    "chat": "Chat",
+    "profile": "Profil",
+    "settings": "Paramètres"
+  },
+  "theme": {
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système",
+    "toggle_theme": "Changer le thème"
+  },
+  "language": {
+    "en": "Anglais",
+    "es": "Espagnol",
+    "fr": "Français",
+    "select_language": "Choisir la langue"
+  },
+  "chat": {
+    "send_message": "Envoyer un message...",
+    "no_messages": "Aucun message pour le moment. Commencez la conversation !",
+    "typing": "en train d'écrire..."
+  },
+  "errors": {
+    "something_went_wrong": "Quelque chose s'est mal passé. Veuillez réessayer.",
+    "network_error": "Erreur réseau. Veuillez vérifier votre connexion."
+  }
+}

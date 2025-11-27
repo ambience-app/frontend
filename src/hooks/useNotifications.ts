@@ -156,15 +156,6 @@ const useNotifications = () => {
     }
   }, [preferences]);
 
-  // Save unread count to localStorage when it changes
-  useEffect(() => {
-    if (unreadCount > 0) {
-      localStorage.setItem('unreadCount', unreadCount.toString());
-    } else {
-      localStorage.removeItem('unreadCount');
-    }
-  }, [unreadCount]);
-
   const requestNotificationPermission = async (): Promise<boolean> => {
     if (!('Notification' in window)) {
       console.warn('This browser does not support desktop notifications');
@@ -180,6 +171,15 @@ const useNotifications = () => {
       return false;
     }
   };
+
+  // Save unread count to localStorage when it changes
+  useEffect(() => {
+    if (unreadCount > 0) {
+      localStorage.setItem('unreadCount', unreadCount.toString());
+    } else {
+      localStorage.removeItem('unreadCount');
+    }
+  }, [unreadCount]);
 
   const showNotification = useCallback(
     async (title: string, options?: NotificationOptions) => {
