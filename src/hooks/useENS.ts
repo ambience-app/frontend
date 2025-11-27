@@ -76,7 +76,11 @@ export function useENS() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // Resolve ENS name to address
+  /**
+   * Resolve ENS name to Ethereum address
+   * @param {string} name - The ENS name to resolve (e.g., 'vitalik.eth')
+   * @returns {Promise<string | null>} The Ethereum address or null if resolution fails
+   */
   const resolveName = useCallback(async (name: string): Promise<string | null> => {
     if (!provider) return null;
     
@@ -110,7 +114,11 @@ export function useENS() {
     }
   }, [provider]);
 
-  // Resolve address to ENS name
+  /**
+   * Lookup Ethereum address to ENS name
+   * @param {string} address - The Ethereum address to lookup
+   * @returns {Promise<string | null>} The ENS name or null if lookup fails
+   */
   const lookupAddress = useCallback(async (address: string): Promise<string | null> => {
     if (!provider || !ethers.isAddress(address)) return null;
     
