@@ -63,12 +63,24 @@ function normalizeLinks(html: string): string {
   });
 }
 
+/**
+ * Sanitize user message content with XSS protection and safe HTML formatting
+ * @param {string} input - Raw user input to sanitize
+ * @param {number} [maxLength=1000] - Maximum allowed content length
+ * @returns {string} Sanitized HTML string with safe formatting preserved
+ */
 export function sanitizeMessage(input: string, maxLength = 1000): string {
   const trimmed = (input ?? '').toString().slice(0, maxLength);
   const sanitized = DOMPurify.sanitize(trimmed, config);
   return normalizeLinks(sanitized);
 }
 
+/**
+ * Strip all HTML tags from input, returning plain text only
+ * @param {string} input - Raw user input to strip
+ * @param {number} [maxLength=1000] - Maximum allowed content length
+ * @returns {string} Plain text with all HTML tags removed
+ */
 export function stripAll(input: string, maxLength = 1000): string {
   const trimmed = (input ?? '').toString().slice(0, maxLength);
   return DOMPurify.sanitize(trimmed, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
