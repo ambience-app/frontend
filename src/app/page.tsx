@@ -222,10 +222,10 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-slate-900/50">
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-slate-900/50" aria-labelledby="features-heading">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold mb-4 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
+            <h2 id="features-heading" className="text-4xl sm:text-5xl font-bold mb-4 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
               Why Choose Ambience?
             </h2>
             <p className="text-xl text-slate-700 dark:text-slate-300 max-w-2xl mx-auto">
@@ -233,7 +233,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" role="list" aria-label="Key features">
             {[
               {
                 icon: "🔐",
@@ -266,16 +266,15 @@ export default function Home() {
                 description: "Browse complete immutable chat history. Every conversation is permanently recorded.",
               },
             ].map((feature, index) => (
-              <div
-                key={index}
-                className="group p-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-xl transition-all duration-300"
-              >
-                <div className="text-4xl mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-slate-100">{feature.title}</h3>
-                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{feature.description}</p>
-              </div>
+              <li key={index} role="listitem">
+                <article className="group p-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-xl transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2">
+                  <div className="text-4xl mb-4" aria-hidden="true">{feature.icon}</div>
+                  <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-slate-100">{feature.title}</h3>
+                  <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{feature.description}</p>
+                </article>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </section>
 
