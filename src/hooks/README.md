@@ -1,328 +1,279 @@
-# useTransactionStatus Hook
+# Custom Hooks Directory
 
-A comprehensive React hook for managing blockchain transaction states, receipts, and history in Web3 applications.
+This directory contains custom React hooks that provide reusable stateful logic throughout the Ambiance Chat application. Each hook is designed to encapsulate specific functionality and follows React best practices.
 
-## Features
+## Directory Structure
 
-- ✅ **Transaction Status Tracking**: Monitor transaction states (pending, confirming, success, error, reverted)
-- ✅ **Receipt Handling**: Automatically fetch and manage transaction receipts
-- ✅ **Error Management**: Comprehensive error handling with detailed error information
-- ✅ **Transaction History**: Persistent transaction history with localStorage support
-- ✅ **Confirmation Tracking**: Configurable confirmation requirements
-- ✅ **Callbacks**: Status change, success, and error callbacks
-- ✅ **TypeScript**: Full TypeScript support with comprehensive types
+```
+src/hooks/
+├── README.md                    # This file
+├── useBlockchainSync.ts         # Blockchain state synchronization
+├── useContract.ts               # Smart contract interaction wrapper
+├── useContractEvents.ts         # Real-time contract event listening
+├── useENS.ts                    # Ethereum Name Service resolution
+├── useGasEstimation.ts          # Gas price and limit estimation
+├── useMessageReactions.ts       # Message reaction management
+├── useMessageSearch.ts          # Message search and filtering
+├── useNotifications.ts          # Browser notification management
+├── useProfile.ts                # User profile data management
+├── useRealtimeMessages.ts       # Real-time messaging functionality
+├── useRoomPermissions.ts        # Room access control logic
+└── useUserProfile.ts            # Current user profile management
+```
 
-## Installation
+## Hook Categories
 
-The hook is already included in this project. It uses:
-- `wagmi` for Web3 interactions
-- `viem` for Ethereum types
-- React hooks for state management
+### Blockchain & Web3
+- **useContract**: Simplified smart contract interactions with loading states
+- **useContractEvents**: Real-time blockchain event subscriptions
+- **useGasEstimation**: Gas price and limit estimation with network detection
+- **useBlockchainSync**: Blockchain state synchronization utilities
 
-## Basic Usage
+### ENS & Identity
+- **useENS**: Comprehensive ENS resolution with caching support
+- **useProfile**: User profile data fetching and management
+- **useUserProfile**: Current user's profile state management
 
+### Messaging & Communication
+- **useRealtimeMessages**: WebSocket-based real-time messaging
+- **useMessageSearch**: Advanced message search with pagination
+- **useMessageReactions**: Message reaction functionality with optimistic updates
+
+### Room Management
+- **useRoomPermissions**: Room access control and permission checking
+
+### System Features
+- **useNotifications**: Browser notification management with preferences
+
+## Hook Documentation Standards
+
+Each hook includes comprehensive JSDoc documentation:
+
+### Hook Header
+```typescript
+/**
+ * useHookName hook
+ *
+ * Brief description of what the hook does and its main purpose.
+ *
+ * Features:
+ * - Feature 1 with brief explanation
+ * - Feature 2 with brief explanation
+ * - Feature 3 with brief explanation
+ *
+ * @example
+ * ```tsx
+ * // Basic usage example
+ * const { data, loading, error } = useHookName();
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Advanced usage with options
+ * const result = useHookName(options, { enabled: true });
+ * ```
+ *
+ * @returns {HookReturnType} Description of returned object with properties
+ */
+```
+
+### Function Documentation
+```typescript
+/**
+ * Function description
+ * @param {Type} paramName - Parameter description
+ * @param {Type} [optionalParam] - Optional parameter description
+ * @returns {ReturnType} What the function returns
+ */
+```
+
+## Usage Examples
+
+### Basic Hook Usage
 ```tsx
-import { useTransactionStatus } from '@/hooks';
+import { useENS } from '@/hooks/useENS';
+import { useNotifications } from '@/hooks/useNotifications';
 
-function MyComponent() {
-  const { trackTransaction, getStatus, getReceipt } = useTransactionStatus();
+function UserProfile() {
+  const { resolveName, isLoading } = useENS();
+  const { notifications } = useNotifications();
+  
+  // Use hook functionality
+}
+```
 
-  const handleSendTransaction = async () => {
-    // Send your transaction using wagmi or viem
-    const hash = await sendTransaction(...);
-    
-    // Start tracking the transaction
-    await trackTransaction(hash, {
-      description: 'Transfer 1 ETH',
-      from: '0x...',
-      to: '0x...',
-      value: parseEther('1'),
-    });
+### Advanced Hook with Options
+```tsx
+import { useMessageSearch } from '@/hooks/useMessageSearch';
+import { Message } from '@/types/message';
+
+function MessageSearch({ messages }: { messages: Message[] }) {
+  const searchOptions = {
+    query: 'blockchain',
+    caseSensitive: false,
+    matchWholeWord: false
   };
-
+  
+  const {
+    messages: results,
+    isSearching,
+    nextPage,
+    previousPage
+  } = useMessageSearch(messages, searchOptions, 20);
+  
   return (
     <div>
-      <button onClick={handleSendTransaction}>Send Transaction</button>
-    </div>
-  );
-}
-```
-
-## Advanced Usage
-
-### With Callbacks
-
-```tsx
-const { trackTransaction } = useTransactionStatus({
-  confirmations: 3, // Wait for 3 confirmations
-  onStatusChange: (hash, status) => {
-    console.log(`Transaction ${hash} status: ${status}`);
-  },
-  onSuccess: (hash, receipt) => {
-    console.log('Transaction confirmed!', receipt);
-    // Show success notification
-  },
-  onError: (hash, error) => {
-    console.error('Transaction failed:', error);
-    // Show error notification
-  },
-});
-```
-
-### Monitoring Multiple Transactions
-
-```tsx
-function TransactionList() {
-  const { 
-    transactions, 
-    history, 
-    getPendingTransactions,
-    hasPendingTransactions 
-  } = useTransactionStatus();
-
-  return (
-    <div>
-      <h2>Pending Transactions</h2>
-      {getPendingTransactions().map(tx => (
-        <div key={tx.hash}>
-          <p>Hash: {tx.hash}</p>
-          <p>Status: {tx.status}</p>
-          <p>Confirmations: {tx.confirmations || 0}</p>
-        </div>
-      ))}
-
-      <h2>Transaction History</h2>
-      {history.map(tx => (
-        <div key={tx.id}>
-          <p>{tx.description}</p>
-          <p>Status: {tx.status}</p>
-        </div>
+      {isSearching && <div>Searching...</div>}
+      {results.map(message => (
+        <MessageItem key={message.id} message={message} />
       ))}
     </div>
   );
 }
 ```
 
-### Custom Confirmation Requirements
-
+### Error Handling Pattern
 ```tsx
-// Wait for 12 confirmations (more secure for high-value transactions)
-const { trackTransaction } = useTransactionStatus({
-  confirmations: 12,
-  onSuccess: (hash, receipt) => {
-    console.log('Transaction fully confirmed with 12 blocks');
-  },
-});
-```
+import { useContract } from '@/hooks/useContract';
 
-### Disable Persistence
-
-```tsx
-// Don't save to localStorage
-const { trackTransaction } = useTransactionStatus({
-  persist: false,
-});
-```
-
-### Limit History Size
-
-```tsx
-// Keep only the last 20 transactions
-const { trackTransaction } = useTransactionStatus({
-  maxHistorySize: 20,
-});
-```
-
-## API Reference
-
-### Hook Options
-
-```typescript
-interface UseTransactionStatusOptions {
-  confirmations?: number;        // Default: 1
-  persist?: boolean;             // Default: true
-  maxHistorySize?: number;       // Default: 50
-  onStatusChange?: (hash: Hash, status: TransactionStatus) => void;
-  onSuccess?: (hash: Hash, receipt: TransactionReceipt) => void;
-  onError?: (hash: Hash, error: TransactionError) => void;
-}
-```
-
-### Return Values
-
-```typescript
-{
-  // Transaction tracking
-  trackTransaction: (hash: Hash, metadata?: object) => Promise<void>;
-  getTransaction: (hash: Hash) => TransactionData | undefined;
-  getStatus: (hash: Hash) => TransactionStatus;
-  getReceipt: (hash: Hash) => TransactionReceipt | undefined;
-  getError: (hash: Hash) => TransactionError | undefined;
-
-  // Transaction management
-  clearTransaction: (hash: Hash) => void;
-  clearAllTransactions: () => void;
-
-  // History management
-  history: TransactionHistoryItem[];
-  clearHistory: () => void;
-
-  // Utility functions
-  getPendingTransactions: () => TransactionData[];
-  hasPendingTransactions: () => boolean;
-
-  // Current transactions
-  transactions: TransactionData[];
-}
-```
-
-### Transaction Status Types
-
-```typescript
-type TransactionStatus = 
-  | 'idle'       // Not tracked yet
-  | 'pending'    // Submitted to network
-  | 'confirming' // Receipt received, waiting for confirmations
-  | 'success'    // Confirmed with required confirmations
-  | 'error'      // Error occurred
-  | 'reverted';  // Transaction reverted
-```
-
-## Examples
-
-### Complete Transaction Flow
-
-```tsx
-import { useTransactionStatus } from '@/hooks';
-import { useSendTransaction } from 'wagmi';
-import { parseEther } from 'viem';
-
-function SendEther() {
-  const { sendTransaction } = useSendTransaction();
-  const { 
-    trackTransaction, 
-    getStatus, 
-    getReceipt,
-    hasPendingTransactions 
-  } = useTransactionStatus({
-    confirmations: 2,
-    onSuccess: (hash, receipt) => {
-      alert('Transaction confirmed!');
-    },
-    onError: (hash, error) => {
-      alert(`Transaction failed: ${error.message}`);
-    },
-  });
-
-  const [txHash, setTxHash] = useState<Hash | null>(null);
-
+function ContractInteraction() {
+  const { sendMessage, loading, error } = useContract();
+  
   const handleSend = async () => {
     try {
-      const hash = await sendTransaction({
-        to: '0x...',
-        value: parseEther('0.1'),
-      });
-
-      setTxHash(hash);
-      
-      await trackTransaction(hash, {
-        description: 'Send 0.1 ETH',
-        to: '0x...',
-        value: parseEther('0.1'),
-      });
-    } catch (error) {
-      console.error(error);
+      const result = await sendMessage(roomId, content);
+      if (result.error) {
+        console.error('Contract error:', result.error);
+        return;
+      }
+      // Handle success
+    } catch (err) {
+      console.error('Unexpected error:', err);
     }
   };
-
+  
+  if (error) {
+    return <div>Error: {error.message}</div>;
+  }
+  
   return (
-    <div>
-      <button 
-        onClick={handleSend}
-        disabled={hasPendingTransactions()}
-      >
-        Send 0.1 ETH
-      </button>
-
-      {txHash && (
-        <div>
-          <p>Status: {getStatus(txHash)}</p>
-          {getReceipt(txHash) && (
-            <p>Block: {getReceipt(txHash)?.blockNumber.toString()}</p>
-          )}
-        </div>
-      )}
-    </div>
+    <button onClick={handleSend} disabled={loading}>
+      {loading ? 'Sending...' : 'Send Message'}
+    </button>
   );
 }
 ```
 
-### Transaction History Dashboard
+## Development Guidelines
 
-```tsx
-function TransactionDashboard() {
-  const { history, clearHistory } = useTransactionStatus();
+### Creating New Hooks
+1. Follow React hooks rules (only call at top level)
+2. Use TypeScript for all parameters and return types
+3. Include comprehensive JSDoc documentation
+4. Implement proper cleanup in useEffect
+5. Handle loading and error states
+6. Consider memoization for expensive operations
 
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2>Transaction History</h2>
-        <button onClick={clearHistory}>Clear History</button>
-      </div>
+### Error Handling
+- Always handle potential errors gracefully
+- Provide meaningful error messages
+- Consider retry mechanisms for network requests
+- Log errors appropriately for debugging
 
-      <div className="space-y-2">
-        {history.map(tx => (
-          <div 
-            key={tx.id}
-            className="p-4 border rounded"
-          >
-            <div className="flex justify-between">
-              <span>{tx.description || 'Transaction'}</span>
-              <span className={
-                tx.status === 'success' ? 'text-green-600' :
-                tx.status === 'error' ? 'text-red-600' :
-                'text-yellow-600'
-              }>
-                {tx.status}
-              </span>
-            </div>
-            <p className="text-sm text-gray-500">
-              {new Date(tx.timestamp).toLocaleString()}
-            </p>
-            {tx.receipt && (
-              <a 
-                href={`https://basescan.org/tx/${tx.hash}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 text-sm"
-              >
-                View on Explorer
-              </a>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+### Performance Considerations
+- Use useCallback for functions passed to child components
+- Use useMemo for expensive computations
+- Implement proper dependency arrays
+- Consider data virtualization for large datasets
+
+### Testing Hooks
+- Test all possible states (loading, success, error)
+- Verify cleanup functions work correctly
+- Test with different input parameters
+- Mock external dependencies appropriately
+
+## Common Patterns
+
+### Data Fetching Pattern
+```typescript
+export function useDataFetching<T>(url: string, options?: Options) {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  
+  useEffect(() => {
+    let cancelled = false;
+    
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const result = await fetch(url);
+        if (!cancelled) {
+          setData(await result.json());
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err : new Error('Unknown error'));
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+    
+    fetchData();
+    
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+  
+  return { data, loading, error };
 }
 ```
 
-## Testing
-
-The hook includes comprehensive tests. Run them with:
-
-```bash
-npm test src/hooks/__tests__/useTransactionStatus.test.ts
+### WebSocket Pattern
+```typescript
+export function useWebSocket(url: string) {
+  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [connected, setConnected] = useState(false);
+  
+  useEffect(() => {
+    const ws = new WebSocket(url);
+    
+    ws.onopen = () => setConnected(true);
+    ws.onclose = () => setConnected(false);
+    
+    setSocket(ws);
+    
+    return () => {
+      ws.close();
+    };
+  }, [url]);
+  
+  const send = (message: any) => {
+    if (socket && connected) {
+      socket.send(JSON.stringify(message));
+    }
+  };
+  
+  return { socket, connected, send };
+}
 ```
 
-## Notes
+## Dependencies
+- React 18+
+- wagmi (for blockchain interactions)
+- ethers.js / viem (for Ethereum operations)
+- @tanstack/react-query (for data fetching)
+- Various UI and utility libraries
 
-- The hook automatically polls for transaction receipts every 2 seconds
-- Polling stops once the transaction is confirmed or fails
-- Transaction history is persisted to localStorage by default
-- All intervals are cleaned up on component unmount
-- The hook is SSR-safe and works with Next.js
-
-## License
-
-MIT
+## Contributing
+When creating new hooks:
+1. Follow the established documentation patterns
+2. Include comprehensive examples
+3. Test all possible states and edge cases
+4. Consider performance implications
+5. Update this README if adding new categories
+6. Follow React best practices and hooks rules

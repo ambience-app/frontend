@@ -7,6 +7,36 @@ import { createSafeError } from "@/lib/security/errors";
 import { sanitizeMessage } from "@/lib/sanitize";
 import { Button } from "@/components/ui/button";
 
+/**
+ * ProfileForm component
+ *
+ * A comprehensive form component for updating user profile information with validation,
+ * rate limiting, and security features. Handles username, bio, and avatar updates
+ * with proper error handling and user feedback.
+ *
+ * Features:
+ * - Real-time form validation with Zod schema
+ * - Rate limiting for profile updates (prevents spam)
+ * - Input sanitization for security
+ * - File upload for avatar with size/type validation
+ * - Error handling with user-friendly messages
+ * - Loading states during submission
+ * - Rate limit status display
+ *
+ * @component
+ * @example
+ * ```tsx
+ * // Basic usage
+ * <ProfileForm />
+ *
+ * // With custom styling
+ * <div className="max-w-md mx-auto">
+ *   <ProfileForm />
+ * </div>
+ * ```
+ *
+ * @returns {JSX.Element} A form with username, bio, and avatar inputs
+ */
 export function ProfileForm() {
   const { profile, updateProfile, savingProfile } = useProfile();
   const [username, setUsername] = useState("");
@@ -25,6 +55,7 @@ export function ProfileForm() {
 
   // Rate limiting for profile updates
   const rateLimit = useRateLimit('PROFILE_UPDATE');
+  const rateLimitStatus = rateLimit.getStatus();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

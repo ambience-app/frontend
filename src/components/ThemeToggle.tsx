@@ -15,11 +15,30 @@ const themes = [
 /**
  * ThemeToggle component
  *
- * A dropdown menu that allows users to switch between light, dark, and system themes.
- * Uses the next-themes library to manage the theme state.
+ * A theme switcher button that toggles between light and dark mode.
+ * Uses the next-themes library to manage the theme state and provides
+ * accessibility-friendly theme switching functionality.
+ *
+ * Features:
+ * - Automatic theme detection from system preferences
+ * - Smooth transitions between themes
+ * - Accessible with proper ARIA labels
+ * - Prevents hydration mismatch with mounted state
  *
  * @component
- * @returns {JSX.Element} A dropdown menu for theme selection
+ * @example
+ * ```tsx
+ * // Basic usage in header
+ * <ThemeToggle />
+ *
+ * // In a settings panel
+ * <div className="flex items-center gap-2">
+ *   <span className="text-sm">Theme:</span>
+ *   <ThemeToggle />
+ * </div>
+ * ```
+ *
+ * @returns {JSX.Element} A toggle button with sun/moon icons that switches between light and dark themes
  */
 
 export default function ThemeToggle() {

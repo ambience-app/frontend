@@ -17,7 +17,51 @@ type FormData = {
   password?: string;
 };
 
-export function CreateRoomForm({ onSuccess, onCancel }: { onSuccess?: () => void; onCancel: () => void }) {
+/**
+ * CreateRoomForm component
+ *
+ * A comprehensive form for creating new chat rooms with support for public/private rooms,
+ * optional passwords, and form validation. Uses React Hook Form for form management.
+ *
+ * Features:
+ * - Room name and description fields with validation
+ * - Private/public room toggle with visual indicators
+ * - Optional password protection for private rooms
+ * - Loading states during room creation
+ * - Form validation with error messages
+ * - Success/cancel callbacks
+ *
+ * @component
+ * @param {CreateRoomFormProps} props - Component props
+ * @param {() => void} [props.onSuccess] - Callback called when room is created successfully
+ * @param {() => void} props.onCancel - Callback called when user cancels form
+ *
+ * @example
+ * ```tsx
+ * // Basic usage
+ * <CreateRoomForm 
+ *   onCancel={() => setShowForm(false)}
+ *   onSuccess={() => {
+ *     setShowForm(false);
+ *     refetchRooms();
+ *   }}
+ * />
+ *
+ * // In a modal
+ * <Modal open={showCreateForm} onClose={() => setShowCreateForm(false)}>
+ *   <CreateRoomForm 
+ *     onSuccess={handleRoomCreated}
+ *     onCancel={() => setShowCreateForm(false)}
+ *   />
+ * </Modal>
+ * ```
+ */
+interface CreateRoomFormProps {
+  onSuccess?: () => void;
+  onCancel: () => void;
+}
+
+export function CreateRoomForm({ onSuccess, onCancel }: CreateRoomFormProps) {
   const { createRoom } = useContract();
   const [isLoading, setIsLoading] = useState(false);
   
