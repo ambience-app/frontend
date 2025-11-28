@@ -1,32 +1,12 @@
-import dynamic from 'next/dynamic';
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
-import './globals.css';
-import { ErrorProvider } from '@/contexts/ErrorContext';
-import { ErrorBoundary } from '@/components/error/ErrorBoundary';
-import { setupGlobalErrorHandlers } from '@/lib/errors/errorLogger';
 
-// Lazy load non-critical components
-const Toaster = dynamic(() => import('@/components/ui/sonner').then(mod => mod.Toaster), { 
-  ssr: false 
-});
-
-const Providers = dynamic(() => import('@/components/Providers'), {
-  ssr: true,
-  loading: () => <div className="min-h-screen w-full" />
-});
-
-const PlausibleProvider = dynamic(() => import('next-plausible').then(mod => mod.default), {
-  ssr: true
-});
-
-const ErrorBoundaryWrapper = dynamic(() => import('@/components/ErrorBoundaryWrapper'), {
-  ssr: true
-});
-
-const WebSocketProvider = dynamic(() => import('@/context/WebSocketContext').then(mod => mod.WebSocketProvider), {
-  ssr: false
-});
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { Providers } from "@/components/Providers";
+import PlausibleProvider from "next-plausible";
+import { ErrorBoundaryWrapper } from "@/components/ErrorBoundaryWrapper";
+import { WebSocketProvider } from "@/context/WebSocketContext";
+import AccessibilityInitializer from "@/components/AccessibilityInitializer";
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -67,82 +47,90 @@ export const metadata: Metadata = {
   },
 };
 
-// This is a client component that will handle the language and direction
-'use client';
-
-import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import { useTranslation } from 'react-i18next';
-
-function RootLayoutInner({ children }: { children: React.ReactNode }) {
-  const { i18n } = useTranslation();
-  const [dir, setDir] = useState<'ltr' | 'rtl'>('ltr');
-  const [lang, setLang] = useState('en');
-  const pathname = usePathname();
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setupGlobalErrorHandlers();
-      
-      // Set initial language from localStorage or browser language
-      const savedLang = localStorage.getItem('i18nextLng') || navigator.language.split('-')[0];
-      const initialLang = ['en', 'es', 'fr'].includes(savedLang) ? savedLang : 'en';
-      
-      // Set initial direction based on language
-      const initialDir = initialLang === 'ar' ? 'rtl' : 'ltr';
-      
-      setLang(initialLang);
-      setDir(initialDir);
-      document.documentElement.lang = initialLang;
-      document.documentElement.dir = initialDir;
-    }
-  }, []);
-
-  // Update direction when language changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const currentLang = i18n.language || 'en';
-      const currentDir = currentLang === 'ar' ? 'rtl' : 'ltr';
-      
-      setLang(currentLang);
-      setDir(currentDir);
-      document.documentElement.lang = currentLang;
-      document.documentElement.dir = currentDir;
-    }
-  }, [i18n.language, pathname]);
-
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const plausibleDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN || "ambience-chat.vercel.app";
+  
   return (
-    <html lang={lang} dir={dir} className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <head>
+        {/* Skip navigation for screen readers */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            .skip-nav-link {
+              position: absolute;
+              top: -40px;
+              left: 6px;
+              background: #2563eb;
+              color: white;
+              padding: 8px 16px;
+              text-decoration: none;
+              border-radius: 4px;
+              z-index: 100;
+              transition: top 0.3s ease;
+            }
+            .skip-nav-link:focus {
+              top: 6px;
+            }
+            .sr-only {
+              position: absolute;
+              width: 1px;
+              height: 1px;
+              padding: 0;
+              margin: -1px;
+              overflow: hidden;
+              clip: rect(0, 0, 0, 0);
+              white-space: nowrap;
+              border: 0;
+            }
+          `
+        }} />
+      </head>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <ErrorBoundary
-          fallback={(error, reset) => (
-            <div className="flex items-center justify-center min-h-screen p-4">
-              <div className="w-full max-w-md p-6 space-y-4 bg-card rounded-lg shadow-lg">
-                <h1 className="text-2xl font-bold text-destructive">Something went wrong</h1>
-                <p className="text-muted-foreground">
-                  {error.message || 'An unexpected error occurred. Please try again.'}
-                </p>
-                <button
-                  onClick={reset}
-                  className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-md hover:bg-primary/90 transition-colors"
-                >
-                  Try again
-                </button>
-              </div>
-            </div>
-          )}
-        >
-          <ErrorProvider>
-            <ErrorBoundaryWrapper>
-              <WebSocketProvider>
-                <Providers>
+        <PlausibleProvider domain="ambience-chat.vercel.app" trackOutboundLinks>
+          <ErrorBoundaryWrapper>
+            <WebSocketProvider>
+              <Providers>
+                {/* Skip navigation links for accessibility */}
+                <a href="#main-content" className="skip-nav-link">
+                  Skip to main content
+                </a>
+                <a href="#navigation" className="skip-nav-link" style={{ top: '50px' }}>
+                  Skip to navigation
+                </a>
+                
+                <AccessibilityInitializer />
+                
+                {/* Live region for dynamic content announcements */}
+                <div 
+                  id="live-region" 
+                  className="sr-only" 
+                  aria-live="polite" 
+                  aria-atomic="true"
+                ></div>
+                
+                <header role="banner">
+                  {/* Header content will be handled by individual page components */}
+                </header>
+                
+                <nav id="navigation" role="navigation" aria-label="Main navigation">
+                  {/* Navigation will be handled by individual page components */}
+                </nav>
+                
+                <main id="main-content" role="main" tabIndex={-1}>
                   {children}
-                  <Toaster position="top-right" />
-                </Providers>
-              </WebSocketProvider>
-            </ErrorBoundaryWrapper>
-          </ErrorProvider>
-        </ErrorBoundary>
+                </main>
+                
+                <footer role="contentinfo">
+                  {/* Footer content will be handled by individual page components */}
+                </footer>
+              </Providers>
+            </WebSocketProvider>
+          </ErrorBoundaryWrapper>
+        </PlausibleProvider>
       </body>
     </html>
   );

@@ -16,42 +16,37 @@ export default function Home() {
       {/* Navigation */}
       <nav
         className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-slate-950/80 border-b border-slate-200/50 dark:border-slate-800/50"
-        role="navigation"
-        aria-label="Primary"
+        aria-label="Primary navigation"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-linear-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center" aria-hidden="true">
                 <span className="text-white font-bold text-lg">A</span>
               </div>
               <span className="text-xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
                 Ambience
               </span>
             </div>
-            <div
-              className="hidden md:flex items-center space-x-8"
-              role="menubar"
-              aria-label="Primary navigation"
-            >
-              <a
-                href="#features"
+            <div className="hidden md:flex items-center space-x-8" role="menubar" aria-label="Main navigation menu">
+              <a 
+                href="#features" 
                 role="menuitem"
-                className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md"
+                className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 Features
               </a>
-              <a
-                href="#how-it-works"
+              <a 
+                href="#how-it-works" 
                 role="menuitem"
-                className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md"
+                className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 How It Works
               </a>
-              <Link
-                href="/profile"
+              <Link 
+                href="/profile" 
                 role="menuitem"
-                className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md"
+                className="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 Profile
               </Link>
@@ -66,22 +61,18 @@ export default function Home() {
                 <WalletConnect />
               </WalletErrorBoundary>
               <button
-                aria-label="Open menu"
+                type="button"
+                aria-label={mobileOpen ? "Close menu" : "Open menu"}
                 aria-expanded={mobileOpen}
                 aria-controls="mobile-menu"
+                aria-haspopup="true"
                 onClick={() => setMobileOpen((v) => !v)}
-                className="inline-flex items-center justify-center w-11 h-11 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 active:scale-95 transition"
+                className="inline-flex items-center justify-center w-11 h-11 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-800/70 active:scale-95 transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-6 h-6"
-                >
+                <span className="sr-only">
+                  {mobileOpen ? "Close mobile menu" : "Open mobile menu"}
+                </span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6" aria-hidden="true">
                   {mobileOpen ? (
                     <path d="M6 18L18 6M6 6l12 12" />
                   ) : (
@@ -103,24 +94,27 @@ export default function Home() {
               aria-label="Mobile navigation"
             >
               <div className="flex flex-col gap-2 py-2">
-                <a
-                  href="#features"
+                <a 
+                  href="#features" 
                   role="menuitem"
-                  className="px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  onClick={() => setMobileOpen(false)}
                 >
                   Features
                 </a>
-                <a
-                  href="#how-it-works"
+                <a 
+                  href="#how-it-works" 
                   role="menuitem"
-                  className="px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  onClick={() => setMobileOpen(false)}
                 >
                   How It Works
                 </a>
-                <Link
-                  href="/profile"
+                <Link 
+                  href="/profile" 
                   role="menuitem"
-                  className="px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  onClick={() => setMobileOpen(false)}
                 >
                   Profile
                 </Link>
@@ -131,8 +125,8 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden">
+      <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden" aria-labelledby="hero-heading">
+        <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400/20 dark:bg-blue-500/10 rounded-full blur-3xl"></div>
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-400/20 dark:bg-indigo-500/10 rounded-full blur-3xl"></div>
         </div>
@@ -144,14 +138,14 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
           >
-            <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 mb-8">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 mb-8" role="status">
               <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
                 ✨ Decentralized • Onchain • Censorship-Resistant
               </span>
             </div>
-
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
-              <span className="bg-linear-to-r from-slate-900 via-blue-800 to-indigo-800 dark:from-slate-100 dark:via-blue-200 dark:to-indigo-200 bg-clip-text text-transparent">
+            
+            <h1 id="hero-heading" className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+              <span className="bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-800 dark:from-slate-100 dark:via-blue-200 dark:to-indigo-200 bg-clip-text text-transparent">
                 Chat on the Blockchain
               </span>
             </h1>
@@ -173,27 +167,22 @@ export default function Home() {
               transition={{ delay: 0.1, duration: 0.3 }}
             >
               <button
+                type="button"
                 onClick={() => setShowComingSoon(true)}
-                className="group px-8 py-4 bg-linear-to-r from-blue-600 to-indigo-600 text-white rounded-full font-semibold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-200 flex items-center gap-2"
+                className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-semibold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-200 flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                aria-describedby="start-chatting-description"
               >
                 Start Chatting
-                <svg
-                  className="w-5 h-5 group-hover:translate-x-1 transition-transform"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 7l5 5m0 0l-5 5m5-5H6"
-                  />
+                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </button>
+              <span id="start-chatting-description" className="sr-only">
+                Launch the chat application to start messaging
+              </span>
               <a
                 href="#how-it-works"
-                className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-full font-semibold text-lg border-2 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg transition-all duration-200"
+                className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-full font-semibold text-lg border-2 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 Learn More
               </a>
@@ -267,6 +256,10 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-slate-900/50" aria-labelledby="features-heading">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 id="features-heading" className="text-4xl sm:text-5xl font-bold mb-4 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
       <section
         id="features"
         className="py-20 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-slate-900/50"
@@ -282,7 +275,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" role="list" aria-label="Key features">
             {[
               {
                 icon: '🔐',
@@ -321,27 +314,23 @@ export default function Home() {
                   'Browse complete immutable chat history. Every conversation is permanently recorded.',
               },
             ].map((feature, index) => (
-              <div
-                key={index}
-                className="group p-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-xl transition-all duration-300"
-              >
-                <div className="text-4xl mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-slate-100">
-                  {feature.title}
-                </h3>
-                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                  {feature.description}
-                </p>
-              </div>
+              <li key={index} role="listitem">
+                <article className="group p-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-xl transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2">
+                  <div className="text-4xl mb-4" aria-hidden="true">{feature.icon}</div>
+                  <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-slate-100">{feature.title}</h3>
+                  <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{feature.description}</p>
+                </article>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8">
+      <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8" aria-labelledby="how-it-works-heading">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
+            <h2 id="how-it-works-heading" className="text-4xl sm:text-5xl font-bold mb-4 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
             <h2 className="text-4xl sm:text-5xl font-bold mb-4 bg-linear-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
               How It Works
             </h2>
@@ -350,7 +339,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <ol className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto" role="list" aria-label="Steps to get started">
             {[
               {
                 step: '01',
@@ -371,8 +360,9 @@ export default function Home() {
                   'All messages are permanently stored on Base blockchain. You truly own your conversations.',
               },
             ].map((step, index) => (
-              <div key={index} className="relative">
+              <li key={index} role="listitem" className="relative">
                 <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-xl mb-6" aria-label={`Step ${step.step}`}>
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-linear-to-r from-blue-600 to-indigo-600 text-white font-bold text-xl mb-6">
                     {step.step}
                   </div>
@@ -384,19 +374,20 @@ export default function Home() {
                   </p>
                 </div>
                 {index < 2 && (
+                  <div className="hidden md:block absolute top-8 left-full w-full h-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 transform translate-x-4" aria-hidden="true"></div>
                   <div className="hidden md:block absolute top-8 left-full w-full h-0.5 bg-linear-to-r from-blue-600 to-indigo-600 transform translate-x-4"></div>
                 )}
-              </div>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
+      <section className="py-20 px-4 sm:px-6 lg:px-8" aria-labelledby="cta-heading">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="bg-linear-to-r from-blue-600 to-indigo-600 rounded-3xl p-12 sm:p-16 shadow-2xl">
-            <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-12 sm:p-16 shadow-2xl">
+            <h2 id="cta-heading" className="text-4xl sm:text-5xl font-bold text-white mb-6">
               Ready to Experience Decentralized Messaging?
             </h2>
             <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto">
@@ -404,22 +395,13 @@ export default function Home() {
               chatting on the blockchain today.
             </p>
             <button
+              type="button"
               onClick={() => setShowComingSoon(true)}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 rounded-full font-semibold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-200"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 rounded-full font-semibold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600"
             >
               Launch Ambience Chat
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 7l5 5m0 0l-5 5m5-5H6"
-                />
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </button>
           </div>
