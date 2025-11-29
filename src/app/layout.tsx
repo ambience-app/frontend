@@ -7,6 +7,26 @@ import PlausibleProvider from "next-plausible";
 import { ErrorBoundaryWrapper } from "@/components/ErrorBoundaryWrapper";
 import { WebSocketProvider } from "@/context/WebSocketContext";
 import AccessibilityInitializer from "@/components/AccessibilityInitializer";
+import { PerformanceMonitor } from "@/components/PerformanceMonitor";
+import { PerformanceBudget } from "@/components/PerformanceBudget";
+
+// Preload critical resources
+const preloadFonts = `
+  <link
+    rel="preload"
+    href="/fonts/Geist/Geist.woff2"
+    as="font"
+    type="font/woff2"
+    crossOrigin="anonymous"
+  />
+  <link
+    rel="preload"
+    href="/fonts/Geist_Mono/GeistMono.woff2"
+    as="font"
+    type="font/woff2"
+    crossOrigin="anonymous"
+  />
+`;
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
