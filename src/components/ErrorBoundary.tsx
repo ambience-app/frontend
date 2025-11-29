@@ -3,6 +3,8 @@
 import React, { Component, ReactNode } from "react";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import Link from "next/link";
+import * as Sentry from '@sentry/nextjs';
+import { reportError } from '@/lib/errorReporting';
 
 /**
  * ErrorBoundary component
@@ -59,8 +61,31 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    // Log the error to the console
     console.error("ErrorBoundary caught an error:", error, errorInfo);
+    
+    // Report the error to Sentry with additional context
+    reportError(error, {
+      tags: {
+        error_boundary: 'true',
+        component_stack: errorInfo.componentStack || 'No component stack available',
+      },
+      user: {
+        // Add any user context if available
+      },
+      // Add any additional context that might be helpful
+      componentStack: errorInfo.componentStack,
+      location: typeof window !== 'undefined' ? window.location.href : 'server',
+    });
+    
+    // Call the onError prop if provided
     this.props.onError?.(error, errorInfo);
+    
+    // Set the error state
+    this.setState({ 
+      hasError: true, 
+      error 
+    });
   }
 
   componentDidUpdate(prevProps: ErrorBoundaryProps) {
