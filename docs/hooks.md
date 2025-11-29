@@ -369,9 +369,6 @@ function ProfilePage() {
 - **ENS Resolution Failure**: Network issues may prevent ENS lookup.
 - **Stale Data**: Profile data should be refreshed when wallet changes.
 - **Privacy**: Consider what data should be public vs. private.
-- **Cross-Chain ENS**: Handle ENS names that may not resolve on Base.
-- **Basename vs ENS**: Prioritize Basename on Base network.
-
 ---
 
 ## useRooms
