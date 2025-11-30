@@ -1,0 +1,358 @@
+{
+    "_type": "export",
+    "__export_format": 4,
+    "__export_date": "2025-11-30T12:00:00.000Z",
+    "__export_source": "insomnia.desktop.app:v2023.1.0",
+    "resources": [
+        {
+            "_id": "req_1",
+            "parentId": "fld_1",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "url": "{{ base_url }}/{{ api_key }}/web3/contract/sendMessage",
+            "name": "Send Message to Room",
+            "description": "Send a message to a chat room via smart contract interaction",
+            "method": "POST",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "X-API-Key",
+                    "value": "{{ api_key }}"
+                },
+                {
+                    "name": "X-Wallet-Address",
+                    "value": "{{ wallet_address }}"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "json": {
+                    "roomId": "{{ room_id }}",
+                    "content": "Hello from Insomnia API testing!"
+                }
+            }
+        },
+        {
+            "_id": "req_2",
+            "parentId": "fld_1",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "url": "{{ base_url }}/{{ api_key }}/web3/contract/createRoom",
+            "name": "Create Room",
+            "description": "Create a new chat room on the blockchain",
+            "method": "POST",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "X-API-Key",
+                    "value": "{{ api_key }}"
+                },
+                {
+                    "name": "X-Wallet-Address",
+                    "value": "{{ wallet_address }}"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "json": {
+                    "name": "Insomnia Test Room",
+                    "isPrivate": false
+                }
+            }
+        },
+        {
+            "_id": "req_3",
+            "parentId": "fld_1",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "url": "{{ base_url }}/{{ api_key }}/web3/contract/getRoomMessages?roomId={{ room_id }}&offset=0&limit=20",
+            "name": "Get Room Messages",
+            "description": "Retrieve messages from a specific room with pagination support",
+            "method": "GET",
+            "headers": [
+                {
+                    "name": "X-API-Key",
+                    "value": "{{ api_key }}"
+                },
+                {
+                    "name": "X-Wallet-Address",
+                    "value": "{{ wallet_address }}"
+                }
+            ]
+        },
+        {
+            "_id": "req_4",
+            "parentId": "fld_1",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "url": "{{ base_url }}/{{ api_key }}/web3/contract/setUsername",
+            "name": "Set Username",
+            "description": "Set or update the user's display username on the blockchain",
+            "method": "POST",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "X-API-Key",
+                    "value": "{{ api_key }}"
+                },
+                {
+                    "name": "X-Wallet-Address",
+                    "value": "{{ wallet_address }}"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "json": {
+                    "username": "insomnia_test_user"
+                }
+            }
+        },
+        {
+            "_id": "req_5",
+            "parentId": "fld_1",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "url": "{{ base_url }}/{{ api_key }}/web3/contract/getRoom?roomId={{ room_id }}",
+            "name": "Get Room Information",
+            "description": "Retrieve information about a specific room",
+            "method": "GET",
+            "headers": [
+                {
+                    "name": "X-API-Key",
+                    "value": "{{ api_key }}"
+                },
+                {
+                    "name": "X-Wallet-Address",
+                    "value": "{{ wallet_address }}"
+                }
+            ]
+        },
+        {
+            "_id": "req_6",
+            "parentId": "fld_2",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "url": "{{ base_url }}/{{ api_key }}/integrations/ipfs/upload",
+            "name": "Upload File to IPFS",
+            "description": "Upload a file to IPFS and return the CID for reference in messages",
+            "method": "POST",
+            "headers": [
+                {
+                    "name": "X-API-Key",
+                    "value": "{{ api_key }}"
+                },
+                {
+                    "name": "X-Wallet-Address",
+                    "value": "{{ wallet_address }}"
+                }
+            ],
+            "body": {
+                "type": "file",
+                "fileName": ""
+            }
+        },
+        {
+            "_id": "req_7",
+            "parentId": "fld_2",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "url": "{{ base_url }}/{{ api_key }}/integrations/ipfs/cat/QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+            "name": "Retrieve File from IPFS",
+            "description": "Retrieve file content from IPFS using CID",
+            "method": "GET",
+            "headers": [
+                {
+                    "name": "X-API-Key",
+                    "value": "{{ api_key }}"
+                },
+                {
+                    "name": "X-Wallet-Address",
+                    "value": "{{ wallet_address }}"
+                }
+            ]
+        },
+        {
+            "_id": "req_8",
+            "parentId": "fld_3",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "url": "{{ base_url }}/{{ api_key }}/integrations/ens/resolve",
+            "name": "Resolve ENS Name",
+            "description": "Resolve an ENS name to an Ethereum address",
+            "method": "POST",
+            "headers": [
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                },
+                {
+                    "name": "X-API-Key",
+                    "value": "{{ api_key }}"
+                },
+                {
+                    "name": "X-Wallet-Address",
+                    "value": "{{ wallet_address }}"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "json": {
+                    "name": "vitalik.eth"
+                }
+            }
+        },
+        {
+            "_id": "req_9",
+            "parentId": "fld_3",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "url": "{{ base_url }}/{{ api_key }}/integrations/ens/avatar?name=vitalik.eth",
+            "name": "Get ENS Avatar",
+            "description": "Get the avatar URL for an ENS name",
+            "method": "GET",
+            "headers": [
+                {
+                    "name": "X-API-Key",
+                    "value": "{{ api_key }}"
+                },
+                {
+                    "name": "X-Wallet-Address",
+                    "value": "{{ wallet_address }}"
+                }
+            ]
+        },
+        {
+            "_id": "req_10",
+            "parentId": "fld_4",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "url": "{{ base_url }}/{{ api_key }}/rate-limit",
+            "name": "Get Rate Limit Status",
+            "description": "Check current rate limit status and remaining requests",
+            "method": "GET",
+            "headers": [
+                {
+                    "name": "X-API-Key",
+                    "value": "{{ api_key }}"
+                },
+                {
+                    "name": "X-Wallet-Address",
+                    "value": "{{ wallet_address }}"
+                }
+            ]
+        },
+        {
+            "_id": "fld_1",
+            "parentId": "wrk_1",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "name": "Smart Contract Operations",
+            "description": "Core blockchain interaction endpoints"
+        },
+        {
+            "_id": "fld_2",
+            "parentId": "wrk_1",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "name": "IPFS Integration",
+            "description": "File storage and retrieval via IPFS"
+        },
+        {
+            "_id": "fld_3",
+            "parentId": "wrk_1",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "name": "ENS Integration",
+            "description": "Ethereum Name Service resolution"
+        },
+        {
+            "_id": "fld_4",
+            "parentId": "wrk_1",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "name": "Rate Limiting & Monitoring",
+            "description": "API rate limiting and monitoring endpoints"
+        },
+        {
+            "_id": "wrk_1",
+            "parentId": null,
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "name": "Ambience Chat API",
+            "description": "Web3 decentralized chat application API collection"
+        },
+        {
+            "_id": "env_1",
+            "parentId": "wrk_1",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "name": "Base Sepolia Testnet",
+            "data": {
+                "base_url": "https://base-sepolia.g.alchemy.com/v2",
+                "api_key": "your_alchemy_api_key_here",
+                "contract_address": "0x23cdaec75b1c3e5d26db4675ecb3c9042a780a0e",
+                "wallet_address": "0x742d35Cc6634C0532925a3b8D3B35E0a0d0a8b10",
+                "room_id": "1"
+            },
+            "color": null,
+            "isPrivate": false
+        },
+        {
+            "_id": "env_2",
+            "parentId": "wrk_1",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "name": "Base Mainnet",
+            "data": {
+                "base_url": "https://base-mainnet.g.alchemy.com/v2",
+                "api_key": "your_alchemy_api_key_here",
+                "contract_address": "0x23cdaec75b1c3e5d26db4675ecb3c9042a780a0e",
+                "wallet_address": "0x742d35Cc6634C0532925a3b8D3B35E0a0d0a8b10",
+                "room_id": "1"
+            },
+            "color": null,
+            "isPrivate": false
+        },
+        {
+            "_id": "env_3",
+            "parentId": "wrk_1",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "name": "Celo Alfajores Testnet",
+            "data": {
+                "base_url": "https://celo-alfajores.g.alchemy.com/v2",
+                "api_key": "your_alchemy_api_key_here",
+                "contract_address": "0x23cdaec75b1c3e5d26db4675ecb3c9042a780a0e",
+                "wallet_address": "0x1234567890123456789012345678901234567890",
+                "room_id": "1"
+            },
+            "color": null,
+            "isPrivate": false
+        },
+        {
+            "_id": "env_4",
+            "parentId": "wrk_1",
+            "modified": 1693402800000,
+            "created": 1693402800000,
+            "name": "Celo Mainnet",
+            "data": {
+                "base_url": "https://celo-mainnet.g.alchemy.com/v2",
+                "api_key": "your_alchemy_api_key_here",
+                "contract_address": "0x23cdaec75b1c3e5d26db4675ecb3c9042a780a0e",
+                "wallet_address": "0x1234567890123456789012345678901234567890",
+                "room_id": "1"
+            },
+            "color": null,
+            "isPrivate": false
+        }
+    ]
+}

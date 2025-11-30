@@ -34,6 +34,18 @@ servers:
       apiKey:
         default: demo
         description: Alchemy API key for Base Sepolia testnet access
+  - url: https://celo-mainnet.g.alchemy.com/v2/{apiKey}
+    description: Celo Mainnet RPC Endpoint
+    variables:
+      apiKey:
+        default: demo
+        description: Alchemy API key for Celo mainnet access
+  - url: https://celo-alfajores.g.alchemy.com/v2/{apiKey}
+    description: Celo Alfajores Testnet RPC Endpoint  
+    variables:
+      apiKey:
+        default: demo
+        description: Alchemy API key for Celo Alfajores testnet access
 
 security:
   - ApiKeyAuth: []
@@ -378,6 +390,145 @@ paths:
         '101':
           description: WebSocket upgrade successful
 
+  /integrations/ipfs/upload:
+    post:
+      tags:
+        - File Storage
+      summary: Upload File to IPFS
+      description: Upload a file to IPFS and return the CID for reference in messages
+      operationId: uploadFileIPFS
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: File to upload (max 10MB)
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          cid:
+                            type: string
+                            description: IPFS CID
+                          url:
+                            type: string
+                            description: IPFS URL
+                          size:
+                            type: integer
+                            description: File size in bytes
+
+  /integrations/ipfs/cat/{cid}:
+    get:
+      tags:
+        - File Storage
+      summary: Retrieve File from IPFS
+      description: Retrieve file content from IPFS using CID
+      operationId: retrieveFileIPFS
+      parameters:
+        - name: cid
+          in: path
+          required: true
+          schema:
+            type: string
+            description: IPFS CID
+      responses:
+        '200':
+          description: File retrieved successfully
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /integrations/ens/resolve:
+    post:
+      tags:
+        - Name Service
+      summary: Resolve ENS Name
+      description: Resolve an ENS name to an Ethereum address
+      operationId: resolveENS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: ENS name to resolve
+                  example: "vitalik.eth"
+      responses:
+        '200':
+          description: ENS name resolved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          address:
+                            $ref: '#/components/schemas/Address'
+                          name:
+                            type: string
+
+  /integrations/ens/avatar:
+    get:
+      tags:
+        - Name Service
+      summary: Get ENS Avatar
+      description: Get the avatar URL for an ENS name
+      operationId: getENSAvatar
+      parameters:
+        - name: name
+          in: query
+          required: true
+          schema:
+            type: string
+            description: ENS name
+          example: "vitalik.eth"
+      responses:
+        '200':
+          description: ENS avatar retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          avatarUrl:
+                            type: string
+                            description: Avatar image URL
+                          contentHash:
+                            type: string
+                            description: IPFS content hash
+
   /rate-limit:
     get:
       tags:
@@ -427,6 +578,14 @@ x-networks:
   - name: "Base Sepolia"
     chainId: 84532
     rpcUrl: "https://base-sepolia.g.alchemy.com/v2/{apiKey}"
+    contractAddress: "0x23cdaec75b1c3e5d26db4675ecb3c9042a780a0e"
+  - name: "Celo Mainnet"
+    chainId: 42220
+    rpcUrl: "https://celo-mainnet.g.alchemy.com/v2/{apiKey}"
+    contractAddress: "0x23cdaec75b1c3e5d26db4675ecb3c9042a780a0e"
+  - name: "Celo Alfajores"
+    chainId: 44787
+    rpcUrl: "https://celo-alfajores.g.alchemy.com/v2/{apiKey}"
     contractAddress: "0x23cdaec75b1c3e5d26db4675ecb3c9042a780a0e"
 
 x-features:

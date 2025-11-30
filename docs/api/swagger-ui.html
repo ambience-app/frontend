@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ambience Chat API - Interactive Documentation</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.0.0/swagger-ui.css" />
+    <style>
+        .swagger-ui .topbar {
+            background-color: #1a1a2e;
+            border-bottom: 3px solid #16213e;
+        }
+        .swagger-ui .topbar .topbar-wrapper a {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        .swagger-ui .info hgroup.main a {
+            color: #1a1a2e;
+        }
+        .swagger-ui .info hgroup.main a:hover {
+            color: #16213e;
+        }
+        .swagger-ui .scheme-container {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 16px;
+        }
+        .network-selector {
+            margin: 10px 0;
+            padding: 8px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            background: white;
+        }
+        .test-accounts {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 4px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+        .test-accounts h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        .test-account {
+            display: inline-block;
+            margin: 5px 10px 5px 0;
+            padding: 5px 10px;
+            background: white;
+            border: 1px solid #2196f3;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    
+    <div class="test-accounts">
+        <h3>🧪 Test Accounts</h3>
+        <p><strong>Base Sepolia Testnet:</strong></p>
+        <div>
+            <span class="test-account">0x742d35Cc6634C0532925a3b8D3B35E0a0d0a8b10</span>
+            <span class="test-account">0x8ba1f109551bD432803012645Hac136c7C1A30b4</span>
+        </div>
+        <p><strong>Celo Alfajores Testnet:</strong></p>
+        <div>
+            <span class="test-account">0x1234567890123456789012345678901234567890</span>
+            <span class="test-account">0x0987654321098765432109876543210987654321</span>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/swagger-ui-dist@5.0.0/swagger-ui-bundle.js"></script>
+    <script>
+        const ui = SwaggerUIBundle({
+            url: './openapi.yaml',
+            dom_id: '#swagger-ui',
+            deepLinking: true,
+            presets: [
+                SwaggerUIBundle.presets.apis,
+                SwaggerUIStandalonePreset
+            ],
+            layout: "BaseLayout",
+            plugins: [
+                SwaggerUIBundle.plugins.DownloadUrl
+            ],
+            tryItOutEnabled: true,
+            supportedSubmitMethods: ['get', 'post', 'put', 'delete', 'patch'],
+            onComplete: function() {
+                console.log('Swagger UI loaded successfully');
+                
+                // Add network selector
+                const networkSelector = document.createElement('select');
+                networkSelector.className = 'network-selector';
+                networkSelector.innerHTML = `
+                    <option value="base-sepolia">Base Sepolia (Testnet)</option>
+                    <option value="base-mainnet">Base Mainnet</option>
+                    <option value="celo-alfajores">Celo Alfajores (Testnet)</option>
+                    <option value="celo-mainnet">Celo Mainnet</option>
+                `;
+                
+                const infoContainer = document.querySelector('.swagger-ui .info');
+                if (infoContainer) {
+                    const networkLabel = document.createElement('label');
+                    networkLabel.innerHTML = '<strong>Network: </strong>';
+                    networkLabel.appendChild(networkSelector);
+                    infoContainer.appendChild(networkLabel);
+                }
+            },
+            requestInterceptor: function(request) {
+                // Update API key from localStorage if available
+                const apiKey = localStorage.getItem('ambience_api_key');
+                if (apiKey) {
+                    request.headers['X-API-Key'] = apiKey;
+                }
+                
+                // Add wallet address if available
+                const walletAddress = localStorage.getItem('ambience_wallet_address');
+                if (walletAddress) {
+                    request.headers['X-Wallet-Address'] = walletAddress;
+                }
+                
+                return request;
+            },
+            responseInterceptor: function(response) {
+                // Store rate limit info in localStorage
+                const rateLimitHeaders = {
+                    'X-RateLimit-Limit': response.headers['x-ratelimit-limit'],
+                    'X-RateLimit-Remaining': response.headers['x-ratelimit-remaining'],
+                    'X-RateLimit-Reset': response.headers['x-ratelimit-reset']
+                };
+                
+                Object.keys(rateLimitHeaders).forEach(key => {
+                    if (rateLimitHeaders[key]) {
+                        localStorage.setItem(`ambience_${key.toLowerCase()}`, rateLimitHeaders[key]);
+                    }
+                });
+                
+                return response;
+            }
+        });
+        
+        // Add configuration panel
+        const configPanel = document.createElement('div');
+        configPanel.innerHTML = `
+            <div style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 4px; border: 1px solid #dee2e6;">
+                <h3>🔧 Configuration</h3>
+                <div style="margin: 10px 0;">
+                    <label style="display: block; margin-bottom: 5px;">API Key:</label>
+                    <input type="text" id="apiKey" placeholder="Enter your API key" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+                </div>
+                <div style="margin: 10px 0;">
+                    <label style="display: block; margin-bottom: 5px;">Wallet Address:</label>
+                    <input type="text" id="walletAddress" placeholder="Enter your wallet address" style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+                </div>
+                <button onclick="saveConfig()" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Save Configuration</button>
+                <button onclick="clearConfig()" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-left: 10px;">Clear</button>
+            </div>
+        `;
+        
+        document.querySelector('.swagger-ui .info').appendChild(configPanel);
+        
+        function saveConfig() {
+            const apiKey = document.getElementById('apiKey').value;
+            const walletAddress = document.getElementById('walletAddress').value;
+            
+            if (apiKey) localStorage.setItem('ambience_api_key', apiKey);
+            if (walletAddress) localStorage.setItem('ambience_wallet_address', walletAddress);
+            
+            alert('Configuration saved!');
+        }
+        
+        function clearConfig() {
+            localStorage.removeItem('ambience_api_key');
+            localStorage.removeItem('ambience_wallet_address');
+            document.getElementById('apiKey').value = '';
+            document.getElementById('walletAddress').value = '';
+            
+            alert('Configuration cleared!');
+        }
+        
+        // Load saved configuration
+        window.addEventListener('load', function() {
+            const savedApiKey = localStorage.getItem('ambience_api_key');
+            const savedWalletAddress = localStorage.getItem('ambience_wallet_address');
+            
+            if (savedApiKey) {
+                document.getElementById('apiKey').value = savedApiKey;
+            }
+            
+            if (savedWalletAddress) {
+                document.getElementById('walletAddress').value = savedWalletAddress;
+            }
+        });
+    </script>
+</body>
+</html>
