@@ -38,7 +38,7 @@ This project demonstrates how to build a fully onchain messaging platform where:
 - **Base Blockchain** - Layer 2 network built on Optimism
 - **Solidity** - Smart contract development
 - **Foundry/Hardhat** - Smart contract development framework
-- **The Graph** - Indexing and querying blockchain data (optional)
+- **The Graph** - Indexing and querying blockchain data 
 
 ## Architecture
 

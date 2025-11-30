@@ -268,11 +268,23 @@ export function useChat(roomId: string) {
   }, [contractClient, fetchMessages]);
 
   return {
-    messages,
+    // State
+    messages: messages || [],
+    isLoading: isLoadingMessages,
     isSending,
     isLoading,
     error,
     sendMessage,
-    fetchMessages,
+    createRoom,
+    joinRoom,
+    fetchNextPage,
+    hasNextPage: !!hasNextPage,
+    isFetchingNextPage,
+    refetch: refetchMessages,
+    invalidateMessages,
+
+    // Advanced operations
+    batchOperations,
+    clearPendingBatches: contract.clearPendingBatches,
   };
 }

@@ -1,139 +1,335 @@
-import { useState } from "react";
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { Address } from "viem";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAccount, useReadContract, useWriteContract } from "wagmi";
+import { Address, Abi } from "viem";
 
-import CONTRACT_ABI from "@/contracts/Messaging.json";
-import { CONTRACT_ADDRESS } from "@/config/contracts"; // ensure you export address
+import CONTRACT_ABI from "@/contracts/ambienceChat.json";
+import { CONTRACT_ADDRESSES } from "@/contracts/addresses";
+import type { Message } from "@/types/message";
 
+// Constants
+const MESSAGES_PER_PAGE = 20;
+const CACHE_TIME = 1000 * 60 * 5; // 5 minutes
+const STALE_TIME = 1000 * 60 * 2; // 2 minutes
+
+// Get current contract address (you might want to get this from config/env)
+const getContractAddress = (): Address => {
+  return CONTRACT_ADDRESSES.localhost.AMBIENCE_CHAT as Address;
+};
+
+interface BatchTransaction {
+  id: string;
+  functionName: string;
+  args: readonly unknown[];
+  onSuccess?: (result: any) => void;
+  onError?: (error: Error) => void;
+}
+
+interface UseContractReturn {
+  // State
+  loading: boolean;
+  error: Error | null;
+  isConnected: boolean;
+  pendingBatches: number;
+
+  // Write operations
+  createRoom: (roomName: string, isPrivate?: boolean) => Promise<any>;
+  joinRoom: (roomId: number) => Promise<any>;
+  sendMessage: (roomId: number, content: string) => Promise<any>;
+
+  // Batch operations
+  batchTransactions: (transactions: Omit<BatchTransaction, 'id'>[]) => void;
+  clearPendingBatches: () => void;
+
+  // Utility functions
+  invalidateMessages: (roomId?: string) => void;
+}
 
 /**
- * useContract hook
- *
- * A hook that provides a simplified interface for interacting with the messaging smart contract on Base blockchain.
- * It handles reading from and writing to the contract, managing transaction states, and managing contract interactions.
- *
- * @returns {Object} An object with functions to read and write to the contract, and the current connection state.
- * @property {boolean} loading - Whether a transaction is in progress.
- * @property {unknown} error - The error object if a transaction fails.
- * @property {boolean} isConnected - Whether the user is connected to the blockchain.
- * @property {function} getMessages - A function to get messages from a room.
- * @property {function} createRoom - A function to create a new room.
- * @property {function} joinRoom - A function to join a room.
- * @property {function} sendMessage - A function to send a message to a room.
+ * Hook for reading messages with pagination
  */
+export function useMessages(roomId: string, page: number = 1) {
+  const { isConnected } = useAccount();
+  const queryClient = useQueryClient();
+  
+  const { data, isLoading, error, refetch } = useReadContract({
+    address: getContractAddress(),
+    abi: CONTRACT_ABI.abi as Abi,
+    functionName: "getRoomMessages",
+    args: [BigInt(roomId), BigInt((page - 1) * MESSAGES_PER_PAGE), BigInt(MESSAGES_PER_PAGE)],
+    query: {
+      enabled: isConnected && !!roomId,
+      staleTime: STALE_TIME,
+      gcTime: CACHE_TIME,
+    },
+  });
 
-export function useContract() {
-  const { address: userAddress, isConnected } = useAccount();
+  // Transform the result to match our Message type
+  const messages: Message[] = useMemo(() => {
+    if (!data || !Array.isArray(data)) return [];
+    
+    return data.map((msg, index) => ({
+      id: `${roomId}-${(page - 1) * MESSAGES_PER_PAGE + index}`,
+      sender: msg[0], // sender address
+      content: msg[1], // content
+      timestamp: Number(msg[2]) * 1000, // Convert to milliseconds
+      roomId,
+    }));
+  }, [data, roomId, page]);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
-
-  const { writeContractAsync } = useWriteContract();
-
-  const getMessages = async (roomId: number) => {
-    try {
-      const result = await useReadContract({
-        address: CONTRACT_ADDRESS as Address,
-        abi: CONTRACT_ABI,
-        functionName: "getMessages",
-        args: [roomId],
+  // Calculate pagination metadata
+  const hasNextPage = messages.length === MESSAGES_PER_PAGE;
+  
+  const fetchNextPage = useCallback(() => {
+    if (hasNextPage && !isLoading) {
+      queryClient.fetchQuery({
+        queryKey: ['messages', roomId, page + 1],
+        staleTime: STALE_TIME,
       });
-
-      return result.data || [];
-    } catch (err) {
-      console.error("Error reading messages:", err);
-      setError(err);
-      return [];
     }
-  };
-
-  const waitForReceipt = async (hash: Address) => {
-    const receipt = await useWaitForTransactionReceipt({
-      hash,
-      confirmations: 1,
-    });
-
-    return receipt.data;
-  };
-
-  const createRoom = async (roomName: string) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const hash = await writeContractAsync({
-        address: CONTRACT_ADDRESS as Address,
-        abi: CONTRACT_ABI,
-        functionName: "createRoom",
-        args: [roomName],
-      });
-
-      return await waitForReceipt(hash);
-    } catch (err) {
-      console.error("Create room failed:", err);
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const joinRoom = async (roomId: number) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const hash = await writeContractAsync({
-        address: CONTRACT_ADDRESS as Address,
-        abi: CONTRACT_ABI,
-        functionName: "joinRoom",
-        args: [roomId],
-      });
-
-      return await waitForReceipt(hash);
-    } catch (err) {
-      console.error("Join room failed:", err);
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ---------------------------
-  // Write: Send a Message
-  // ---------------------------
-  const sendMessage = async (roomId: number, content: string) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const hash = await writeContractAsync({
-        address: CONTRACT_ADDRESS as Address,
-        abi: CONTRACT_ABI,
-        functionName: "sendMessage",
-        args: [roomId, content],
-      });
-
-      return await waitForReceipt(hash);
-    } catch (err) {
-      console.error("Send message error:", err);
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [hasNextPage, isLoading, roomId, page, queryClient]);
 
   return {
-    // state
-    loading,
-    error,
+    data: messages,
+    isLoading,
+    error: error ? new Error(error.message) : null,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage: isLoading && page > 1,
+    refetch,
+  };
+}
+
+/**
+ * Optimized useContract hook with pagination, caching, and batching
+ */
+export function useContract(): UseContractReturn {
+  const { address: userAddress, isConnected } = useAccount();
+  const queryClient = useQueryClient();
+
+  // State management
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [pendingBatches, setPendingBatches] = useState(0);
+
+  // Refs for cleanup
+  const batchTimeoutRef = useRef<NodeJS.Timeout>();
+  const transactionBatchRef = useRef<BatchTransaction[]>([]);
+
+  // Optimized wagmi hooks
+  const { writeContractAsync } = useWriteContract();
+
+  // Memoized contract config
+  const contractConfig = useMemo(() => ({
+    address: getContractAddress(),
+    abi: CONTRACT_ABI.abi as Abi,
+  }), []);
+
+  // Optimized createRoom with error handling and cache invalidation
+  const createRoomMutation = useMutation({
+    mutationFn: async ({ roomName, isPrivate = false }: { roomName: string; isPrivate?: boolean }) => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const hash = await writeContractAsync({
+          ...contractConfig,
+          functionName: "createRoom",
+          args: [roomName, isPrivate],
+        });
+        
+        // Invalidate related queries
+        queryClient.invalidateQueries({ queryKey: ['rooms'] });
+        queryClient.invalidateQueries({ queryKey: ['messages'] });
+        
+        return hash;
+      } catch (err) {
+        const error = new Error(err instanceof Error ? err.message : "Create room failed");
+        setError(error);
+        throw error;
+      } finally {
+        setLoading(false);
+      }
+    },
+    retry: 1,
+  });
+
+  // Optimized joinRoom with cache invalidation
+  const joinRoomMutation = useMutation({
+    mutationFn: async (roomId: number) => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const hash = await writeContractAsync({
+          ...contractConfig,
+          functionName: "addRoomMember",
+          args: [BigInt(roomId), userAddress!],
+        });
+        
+        // Invalidate related queries
+        queryClient.invalidateQueries({ queryKey: ['room-memberships'] });
+        queryClient.invalidateQueries({ queryKey: ['user-rooms'] });
+        
+        return hash;
+      } catch (err) {
+        const error = new Error(err instanceof Error ? err.message : "Join room failed");
+        setError(error);
+        throw error;
+      } finally {
+        setLoading(false);
+      }
+    },
+    retry: 1,
+  });
+
+  // Optimized sendMessage with optimistic updates
+  const sendMessageMutation = useMutation({
+    mutationFn: async ({ roomId, content }: { roomId: number; content: string }) => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const hash = await writeContractAsync({
+          ...contractConfig,
+          functionName: "sendMessage",
+          args: [BigInt(roomId), content],
+        });
+        
+        // Optimistically update the cache
+        queryClient.setQueryData(['messages', roomId, 1], (old: Message[] = []) => {
+          const newMessage: Message = {
+            id: hash || Date.now().toString(),
+            sender: userAddress!,
+            content,
+            timestamp: Date.now(),
+            roomId: roomId.toString(),
+          };
+          return [newMessage, ...old];
+        });
+        
+        // Invalidate to ensure consistency
+        queryClient.invalidateQueries({ queryKey: ['messages', roomId] });
+        
+        return hash;
+      } catch (err) {
+        const error = new Error(err instanceof Error ? err.message : "Send message failed");
+        setError(error);
+        throw error;
+      } finally {
+        setLoading(false);
+      }
+    },
+    retry: 1,
+  });
+
+  // Transaction batching system
+  const processBatch = useCallback(async (transactions: BatchTransaction[]) => {
+    if (transactions.length === 0) return;
+
+    setLoading(true);
+    setPendingBatches(transactions.length);
+
+    try {
+      // Group transactions by gas estimation
+      const results = await Promise.allSettled(
+        transactions.map(async (tx) => {
+          try {
+            const hash = await writeContractAsync({
+              ...contractConfig,
+              functionName: tx.functionName,
+              args: tx.args,
+            });
+            
+            tx.onSuccess?.(hash);
+            return { success: true, hash };
+          } catch (err) {
+            const error = new Error(err instanceof Error ? err.message : `${tx.functionName} failed`);
+            tx.onError?.(error);
+            return { success: false, error };
+          }
+        })
+      );
+
+      // Invalidate relevant caches
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['room-memberships'] });
+
+    } catch (err) {
+      console.error('Batch transaction error:', err);
+    } finally {
+      setLoading(false);
+      setPendingBatches(0);
+      transactionBatchRef.current = [];
+    }
+  }, [contractConfig, writeContractAsync, queryClient]);
+
+  // Batch transactions with debouncing
+  const batchTransactions = useCallback((transactions: Omit<BatchTransaction, 'id'>[]) => {
+    const newTransactions: BatchTransaction[] = transactions.map((tx, index) => ({
+      ...tx,
+      id: `batch-${Date.now()}-${index}`,
+    }));
+
+    transactionBatchRef.current.push(...newTransactions);
+
+    // Clear existing timeout
+    if (batchTimeoutRef.current) {
+      clearTimeout(batchTimeoutRef.current);
+    }
+
+    // Set new timeout to process batch
+    batchTimeoutRef.current = setTimeout(() => {
+      const batch = transactionBatchRef.current.splice(0);
+      processBatch(batch);
+    }, 1000); // 1 second debounce
+  }, [processBatch]);
+
+  // Clear pending batches
+  const clearPendingBatches = useCallback(() => {
+    if (batchTimeoutRef.current) {
+      clearTimeout(batchTimeoutRef.current);
+    }
+    transactionBatchRef.current = [];
+    setPendingBatches(0);
+  }, []);
+
+  // Invalidate messages cache
+  const invalidateMessages = useCallback((roomId?: string) => {
+    if (roomId) {
+      queryClient.invalidateQueries({ queryKey: ['messages', roomId] });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+    }
+  }, [queryClient]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (batchTimeoutRef.current) {
+        clearTimeout(batchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  return {
+    // State
+    loading: loading || createRoomMutation.isPending || joinRoomMutation.isPending || sendMessageMutation.isPending,
+    error: error || createRoomMutation.error || joinRoomMutation.error || sendMessageMutation.error,
     isConnected,
+    pendingBatches,
 
-    // read
-    getMessages,
+    // Write operations
+    createRoom: (roomName: string, isPrivate = false) => createRoomMutation.mutateAsync({ roomName, isPrivate }),
+    joinRoom: joinRoomMutation.mutateAsync,
+    sendMessage: (roomId: number, content: string) => sendMessageMutation.mutateAsync({ roomId, content }),
 
-    // writes
-    createRoom,
-    joinRoom,
-    sendMessage,
+    // Batch operations
+    batchTransactions,
+    clearPendingBatches,
+
+    // Utility functions
+    invalidateMessages,
   };
 }

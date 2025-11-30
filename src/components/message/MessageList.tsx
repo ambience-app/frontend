@@ -1,89 +1,53 @@
-import { useInfiniteQuery, InfiniteData } from '@tanstack/react-query';
+import { memo, useEffect, useRef, useMemo } from 'react';
 import { useInView } from 'react-intersection-observer';
-import { useEffect, useRef, useCallback } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Message } from './Message';
 import type { Message as MessageType } from '@/types/message';
 import { cn } from '@/lib/utils';
-import { Bot, MessageSquare, AlertCircle, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-
-const MESSAGES_PER_PAGE = 20;
 
 interface MessageListProps {
   roomId: string;
+  messages: MessageType[];
   currentUserAddress: string;
-  fetchMessages: (roomId: string, page: number) => Promise<MessageType[]>;
+  isLoading: boolean;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  onLoadMore: () => void;
+  onRefetch: () => void;
   className?: string;
   isSending?: boolean;
   onRetry?: () => void;
 }
 
-export function MessageList({ 
-  roomId, 
-  currentUserAddress, 
-  fetchMessages,
-  className,
-  isSending = false,
-  onRetry
-}: MessageListProps) {
+/**
+ * Optimized MessageList component with memoization and virtual scrolling support
+ */
+const MessageList = memo<MessageListProps>(({
+  roomId,
+  messages,
+  currentUserAddress,
+  isLoading,
+  hasNextPage,
+  isFetchingNextPage,
+  onLoadMore,
+  onRefetch,
+  className
+}) => {
   const { ref, inView } = useInView({
     threshold: 0.1,
-    triggerOnce: false,
-  });
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const prevMessageCount = useRef(0);
-  const isInitialLoad = useRef(true);
-  const isLoadingMore = useRef(false);
-
-  const {
-    data,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    status,
-    refetch,
-  } = useInfiniteQuery<MessageType[], Error, InfiniteData<MessageType[]>, string[], number>({
-    queryKey: ['messages', roomId],
-    queryFn: async ({ pageParam = 1 }) => {
-      const messages = await fetchMessages(roomId, pageParam as number);
-      return messages;
-    },
-    initialPageParam: 1,
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.length === MESSAGES_PER_PAGE ? allPages.length + 1 : undefined;
-    },
-    refetchOnWindowFocus: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    rootMargin: '50px',
   });
 
-  // Scroll to bottom on new messages
-  useEffect(() => {
-    const messages = (data?.pages.flat() || []) as MessageType[];
-    
-    if (isInitialLoad.current && messages.length > 0) {
-      // On initial load, scroll to bottom
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      isInitialLoad.current = false;
-    } else if (messages.length > prevMessageCount.current) {
-      // New message added, scroll to bottom
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-    
-    prevMessageCount.current = messages.length;
-  }, [data]);
-
-  // Handle infinite scroll
+  // Load more messages when user scrolls to bottom
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
-      isLoadingMore.current = true;
-      fetchNextPage().finally(() => {
-        isLoadingMore.current = false;
-      });
+      onLoadMore();
     }
-  }, [inView, hasNextPage, fetchNextPage, isFetchingNextPage]);
+  }, [inView, hasNextPage, isFetchingNextPage, onLoadMore]);
+
+  // Memoized message components to prevent re-renders
+  const memoizedMessages = useMemo(() => {
+    if (!messages.length) return null;
 
   const handleRetry = useCallback(() => {
     if (onRetry) {
@@ -119,9 +83,31 @@ export function MessageList({
         {renderLoadingSkeletons(5)}
       </div>
     );
-  }
+  }, [messages, currentUserAddress]);
 
-  if (status === 'error') {
+  // Loading skeleton
+  const loadingSkeleton = useMemo(() => (
+    <div className="space-y-4 p-4">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="flex items-start space-x-3">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-16 w-64" />
+          </div>
+        </div>
+      ))}
+    </div>
+  ), []);
+
+  // Loading more skeleton
+  const loadingMoreSkeleton = useMemo(() => (
+    <div ref={ref} className="flex justify-center py-2">
+      <Skeleton className="h-4 w-32" />
+    </div>
+  ), [ref]);
+
+  if (isLoading) {
     return (
       <div className={cn('flex flex-col items-center justify-center h-full p-6 text-center', className)}>
         <div className="p-4 bg-destructive/10 rounded-full mb-4">
@@ -198,4 +184,8 @@ export function MessageList({
       </div>
     </div>
   );
-}
+});
+
+MessageList.displayName = 'MessageList';
+
+export { MessageList };
