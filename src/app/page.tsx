@@ -1,11 +1,23 @@
 'use client';
 
 import Link from 'next/link';
-import WalletConnect from '@/components/WalletConnect';
-import { useState } from 'react';
+import dynamic from 'next/dynamic';
+import { useState, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import ThemeToggle from '@/components/ThemeToggle';
 import { WalletErrorBoundary } from '@/components/errors/WalletErrorBoundary';
+import { ChatSkeleton, ModalSkeleton } from '@/components/LoadingSkeleton';
+
+// Dynamically import heavy components with loading states
+const ChatInterface = dynamic(() => import('@/components/chat/ChatInterface'), {
+  loading: () => <ChatSkeleton />,
+  ssr: false,
+});
+
+const WalletConnectModal = dynamic(() => import('@/components/wallet/WalletConnectModal'), {
+  loading: () => <ModalSkeleton />,
+  ssr: false,
+});
 
 export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false);
