@@ -80,6 +80,26 @@
         "placeholder": "ws://localhost:3000/ws"
       }
     },
+    "ipfsApiUrl": {
+      "type": "string",
+      "title": "IPFS API URL",
+      "description": "IPFS API endpoint for file operations",
+      "default": "https://ipfs.io/ipfs/",
+      "x-console": {
+        "type": "input",
+        "placeholder": "https://ipfs.io/ipfs/"
+      }
+    },
+    "ensProviderUrl": {
+      "type": "string",
+      "title": "ENS Provider URL",
+      "description": "Ethereum provider URL for ENS resolution",
+      "default": "https://mainnet.infura.io/v3/",
+      "x-console": {
+        "type": "input",
+        "placeholder": "https://mainnet.infura.io/v3/"
+      }
+    },
     "ipfsGateway": {
       "type": "string",
       "title": "IPFS Gateway",
@@ -412,6 +432,109 @@
             "data": {
               "available": false,
               "taken": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "upload-file-ipfs",
+      "title": "Upload File to IPFS",
+      "method": "POST",
+      "path": "/integrations/ipfs/upload",
+      "description": "Upload a file to IPFS and get CID",
+      "parameters": {
+        "file": {
+          "type": "file",
+          "title": "File",
+          "description": "File to upload (max 10MB)",
+          "required": true,
+          "x-console": {
+            "type": "file",
+            "accept": "*/*"
+          }
+        }
+      },
+      "examples": [
+        {
+          "title": "Upload Image File",
+          "request": {
+            "file": "sample-image.jpg"
+          },
+          "response": {
+            "success": true,
+            "data": {
+              "cid": "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+              "url": "https://ipfs.io/ipfs/QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+              "size": 2048576
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "resolve-ens",
+      "title": "Resolve ENS Name",
+      "method": "POST",
+      "path": "/integrations/ens/resolve",
+      "description": "Resolve ENS name to Ethereum address",
+      "parameters": {
+        "name": {
+          "type": "string",
+          "title": "ENS Name",
+          "description": "ENS name to resolve",
+          "required": true,
+          "x-console": {
+            "type": "input",
+            "placeholder": "vitalik.eth"
+          }
+        }
+      },
+      "examples": [
+        {
+          "title": "Resolve vitalik.eth",
+          "request": {
+            "name": "vitalik.eth"
+          },
+          "response": {
+            "success": true,
+            "data": {
+              "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+              "name": "vitalik.eth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "get-ens-avatar",
+      "title": "Get ENS Avatar",
+      "method": "GET",
+      "path": "/integrations/ens/avatar",
+      "description": "Get avatar URL for ENS name",
+      "parameters": {
+        "name": {
+          "type": "string",
+          "title": "ENS Name",
+          "description": "ENS name to get avatar for",
+          "required": true,
+          "x-console": {
+            "type": "input",
+            "placeholder": "vitalik.eth"
+          }
+        }
+      },
+      "examples": [
+        {
+          "title": "Get Avatar for vitalik.eth",
+          "request": {
+            "name": "vitalik.eth"
+          },
+          "response": {
+            "success": true,
+            "data": {
+              "avatarUrl": "https://metadata.ens.domains/mainnet/avatar/vitalik.eth/0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
+              "contentHash": "0x1234567890abcdef..."
             }
           }
         }

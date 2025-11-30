@@ -1,0 +1,378 @@
+{
+    "info": {
+        "name": "Ambience Chat API",
+        "description": "API collection for Ambience Chat - Web3 decentralized chat application",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "https://base-sepolia.g.alchemy.com/v2",
+            "type": "string"
+        },
+        {
+            "key": "api_key",
+            "value": "your_alchemy_api_key_here",
+            "type": "string"
+        },
+        {
+            "key": "contract_address",
+            "value": "0x23cdaec75b1c3e5d26db4675ecb3c9042a780a0e",
+            "type": "string"
+        },
+        {
+            "key": "wallet_address",
+            "value": "0x742d35Cc6634C0532925a3b8D3B35E0a0d0a8b10",
+            "type": "string"
+        },
+        {
+            "key": "room_id",
+            "value": "1",
+            "type": "string"
+        }
+    ],
+    "auth": {
+        "type": "apikey",
+        "apikey": [
+            {
+                "key": "value",
+                "type": "string",
+                "value": "{{api_key}}"
+            },
+            {
+                "key": "key",
+                "type": "string",
+                "value": "X-API-Key"
+            }
+        ]
+    },
+    "item": [
+        {
+            "name": "Smart Contract Operations",
+            "item": [
+                {
+                    "name": "Send Message to Room",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Wallet-Address",
+                                "value": "{{wallet_address}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"roomId\": {{room_id}},\n  \"content\": \"Hello from Postman API testing!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/{{api_key}}/web3/contract/sendMessage",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "{{api_key}}",
+                                "web3",
+                                "contract",
+                                "sendMessage"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Room",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Wallet-Address",
+                                "value": "{{wallet_address}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Postman Test Room\",\n  \"isPrivate\": false\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/{{api_key}}/web3/contract/createRoom",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "{{api_key}}",
+                                "web3",
+                                "contract",
+                                "createRoom"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Room Messages",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Wallet-Address",
+                                "value": "{{wallet_address}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/{{api_key}}/web3/contract/getRoomMessages?roomId={{room_id}}&offset=0&limit=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "{{api_key}}",
+                                "web3",
+                                "contract",
+                                "getRoomMessages"
+                            ],
+                            "query": [
+                                {
+                                    "key": "roomId",
+                                    "value": "{{room_id}}"
+                                },
+                                {
+                                    "key": "offset",
+                                    "value": "0"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Set Username",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Wallet-Address",
+                                "value": "{{wallet_address}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"username\": \"postman_test_user\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/{{api_key}}/web3/contract/setUsername",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "{{api_key}}",
+                                "web3",
+                                "contract",
+                                "setUsername"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Room Information",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Wallet-Address",
+                                "value": "{{wallet_address}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/{{api_key}}/web3/contract/getRoom?roomId={{room_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "{{api_key}}",
+                                "web3",
+                                "contract",
+                                "getRoom"
+                            ],
+                            "query": [
+                                {
+                                    "key": "roomId",
+                                    "value": "{{room_id}}"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "IPFS Integration",
+            "item": [
+                {
+                    "name": "Upload File to IPFS",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "X-Wallet-Address",
+                                "value": "{{wallet_address}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/{{api_key}}/integrations/ipfs/upload",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "{{api_key}}",
+                                "integrations",
+                                "ipfs",
+                                "upload"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Retrieve File from IPFS",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Wallet-Address",
+                                "value": "{{wallet_address}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/{{api_key}}/integrations/ipfs/cat/QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "{{api_key}}",
+                                "integrations",
+                                "ipfs",
+                                "cat",
+                                "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ENS Integration",
+            "item": [
+                {
+                    "name": "Resolve ENS Name",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Wallet-Address",
+                                "value": "{{wallet_address}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"vitalik.eth\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/{{api_key}}/integrations/ens/resolve",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "{{api_key}}",
+                                "integrations",
+                                "ens",
+                                "resolve"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get ENS Avatar",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Wallet-Address",
+                                "value": "{{wallet_address}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/{{api_key}}/integrations/ens/avatar?name=vitalik.eth",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "{{api_key}}",
+                                "integrations",
+                                "ens",
+                                "avatar"
+                            ],
+                            "query": [
+                                {
+                                    "key": "name",
+                                    "value": "vitalik.eth"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Rate Limiting & Monitoring",
+            "item": [
+                {
+                    "name": "Get Rate Limit Status",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "X-Wallet-Address",
+                                "value": "{{wallet_address}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/{{api_key}}/rate-limit",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "{{api_key}}",
+                                "rate-limit"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

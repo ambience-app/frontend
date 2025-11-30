@@ -1,0 +1,46 @@
+{
+  "name": "ambience-chat-api-docs",
+  "version": "1.0.0",
+  "description": "API documentation and testing utilities for Ambience Chat",
+  "main": "test-api-documentation.js",
+  "scripts": {
+    "test": "node test-api-documentation.js",
+    "test:watch": "nodemon test-api-documentation.js",
+    "validate": "npm run test && npm run validate:openapi",
+    "validate:openapi": "swagger-codegen validate -i openapi.yaml",
+    "generate:sdk": "swagger-codegen generate -i openapi.yaml -l typescript-axios -o ./generated-sdk",
+    "serve-docs": "python -m http.server 8080"
+  },
+  "keywords": [
+    "api",
+    "documentation",
+    "swagger",
+    "openapi",
+    "blockchain",
+    "web3",
+    "chat"
+  ],
+  "author": "Ambience Chat Team",
+  "license": "MIT",
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "node-fetch": "^2.6.7",
+    "ws": "^8.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.19",
+    "swagger-codegen": "^2.4.26"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/ambience-chat.git",
+    "directory": "docs/api"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/ambience-chat/issues"
+  },
+  "homepage": "https://github.com/your-org/ambience-chat/blob/main/docs/api/README.md"
+}
