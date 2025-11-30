@@ -79,39 +79,62 @@ export function useChat(roomId: string) {
     setIsSending(true);
     setError(null);
     
-    try {
-      // Send the message to the contract
-      const result = await contractClient.writeContract({
-        address: CONTRACT_ADDRESSES.celo.AMBIENCE_CHAT as `0x${string}`,
-        abi: [{
-          "inputs": [
-            { "name": "roomId", "type": "uint256" },
-            { "name": "content", "type": "string" }
-          ],
-          "name": "sendMessage",
-          "outputs": [{ "name": "", "type": "uint256" }],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        }],
-        functionName: 'sendMessage',
-        args: [BigInt(roomIdNum), content],
-      });
+    // Generate a unique ID for this transaction attempt
+    const attemptId = Date.now();
+    const maxRetries = 3;
+    let retryCount = 0;
 
-      if (!result.success) {
-        throw new Error(result.error?.message || 'Failed to send message');
-      }
+    const executeWithRetry = async (): Promise<{ success: boolean; message?: string; error?: Error }> => {
+      try {
+        // Update UI to show sending state
+        setSending(true);
 
-      // Wait for transaction receipt
-      const receipt = await contractClient.waitForTransactionReceipt(
-        result.data as `0x${string}`
-      );
+        // Check network connection before proceeding
+        if (!navigator.onLine) {
+          throw new Error('No internet connection. Please check your network and try again.');
+        }
 
-      if (!receipt.success) {
-        throw new Error(receipt.error?.message || 'Transaction failed');
-      }
+        // Send the message to the contract
+        const result = await contractClient.writeContract({
+          address: CONTRACT_ADDRESSES.celo.AMBIENCE_CHAT as `0x${string}`,
+          abi: [{
+            "inputs": [
+              { "name": "roomId", "type": "uint256" },
+              { "name": "content", "type": "string" }
+            ],
+            "name": "sendMessage",
+            "outputs": [{ "name": "", "type": "uint256" }],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          }],
+          functionName: 'sendMessage',
+          args: [BigInt(roomIdNum), content],
+        });
 
-      // Get the new message ID from the transaction receipt
-      const messageId = await contractClient.readContract({
+        if (!result.success) {
+          throw new Error(result.error?.message || 'Failed to send message');
+        }
+
+        // Track the transaction
+        trackTransaction(result.data as `0x${string}`, {
+          description: `Message in room ${roomId}`,
+          metadata: { roomId, content, attemptId }
+        });
+
+        // Wait for transaction receipt with timeout
+        const receipt = await Promise.race([
+          contractClient.waitForTransactionReceipt(result.data as `0x${string}`),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Transaction timed out')), 60000) // 60 second timeout
+          )
+        ]) as { success: boolean; data?: any; error?: any };
+
+        if (!receipt.success) {
+          throw new Error(receipt.error?.message || 'Transaction failed');
+        }
+
+        // Get the new message ID from the transaction receipt
+        const messageId = await contractClient.readContract({
         address: CONTRACT_ADDRESSES.celo.AMBIENCE_CHAT as `0x${string}`,
         abi: [{
           "inputs": [],
@@ -156,13 +179,63 @@ export function useChat(roomId: string) {
         }
       }
     } catch (error) {
-      console.error('Failed to send message:', error);
-      setError(error instanceof Error ? error.message : 'Failed to send message');
-      toast.error('Failed to send message');
+      retryCount++;
+      
+      // Handle specific error cases
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
+      
+      // Log the error
+      console.error(`Error sending message (attempt ${retryCount}/${maxRetries}):`, error);
+      
+      // If we've reached max retries, give up
+      if (retryCount >= maxRetries) {
+        setError(getUserFriendlyError(error));
+        return { success: false, error: error as Error };
+      }
+      
+      // Wait before retrying (exponential backoff)
+      const backoffTime = Math.min(1000 * Math.pow(2, retryCount), 10000);
+      console.log(`Retrying in ${backoffTime}ms...`);
+      
+      await new Promise(resolve => setTimeout(resolve, backoffTime));
+      return executeWithRetry();
     } finally {
-      setIsSending(false);
+      if (retryCount >= maxRetries || !error) {
+        setSending(false);
+      }
     }
-  }, [address, contractClient, roomId]);
+  };
+
+  // Helper function to get user-friendly error messages
+  const getUserFriendlyError = (error: unknown): string => {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    if (errorMessage.includes('user rejected')) {
+      return 'Transaction was cancelled';
+    }
+    if (errorMessage.includes('insufficient funds')) {
+      return 'Insufficient funds for transaction';
+    }
+    if (errorMessage.includes('execution reverted')) {
+      return 'Transaction failed. The contract reverted the transaction.';
+    }
+    if (errorMessage.includes('Network changed')) {
+      return 'Network was changed. Please check your wallet and try again.';
+    }
+    if (errorMessage.includes('timeout')) {
+      return 'Transaction timed out. Please check your connection and try again.';
+    }
+    return 'Failed to send message. Please try again.';
+  };
+
+  try {
+    return await executeWithRetry();
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
+    setError(getUserFriendlyError(error));
+    throw error;
+  }
+}, [address, contractClient, roomId]);
 
   // Fetch messages for the current room
   const fetchMessages = useCallback(async (page: number = 0) => {
