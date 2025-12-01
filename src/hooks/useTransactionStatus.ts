@@ -4,8 +4,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { usePublicClient, useWatchPendingTransactions } from 'wagmi';
-import type { Hash, TransactionReceipt } from 'viem';
+import { usePublicClient, useWatchPendingTransactions, useAccount } from 'wagmi';
+import type { Hash, TransactionReceipt, Chain } from 'viem';
 import type {
   TransactionStatus,
   TransactionData,
@@ -13,6 +13,7 @@ import type {
   TransactionError,
   UseTransactionStatusOptions,
 } from '@/types/transaction';
+import { handleContractError } from '@/lib/security/errors';
 
 const STORAGE_KEY = 'transaction_history';
 const DEFAULT_CONFIRMATIONS = 1;
@@ -36,8 +37,38 @@ export function useTransactionStatus(options: UseTransactionStatusOptions = {}) 
     new Map()
   );
   const [history, setHistory] = useState<TransactionHistoryItem[]>([]);
-  const intervalRefs = useRef<Map<Hash, NodeJS.Timeout>>(new Map());
+  const [networkChanged, setNetworkChanged] = useState(false);
+  const intervalRefs = useRef<Map<Hash, { interval: NodeJS.Timeout; startTime: number }>>(new Map());
   const mountedRef = useRef(true);
+  const { chain } = useAccount();
+  const lastChainId = useRef<number | undefined>();
+
+  // Watch for network changes
+  useEffect(() => {
+    if (chain?.id && lastChainId.current && chain.id !== lastChainId.current) {
+      setNetworkChanged(true);
+      // Update all pending transactions to show network change
+      setTransactions(prev => {
+        const newMap = new Map(prev);
+        newMap.forEach((tx, hash) => {
+          if (tx.status === 'pending' || tx.status === 'confirming') {
+            newMap.set(hash, {
+              ...tx,
+              status: 'error',
+              error: {
+                message: 'Network changed',
+                code: 'NETWORK_CHANGED',
+                timestamp: Date.now(),
+                details: `Changed from chain ${lastChainId.current} to ${chain.id}`
+              }
+            });
+          }
+        });
+        return newMap;
+      });
+    }
+    lastChainId.current = chain?.id;
+  }, [chain?.id]);
 
   // Load transaction history from localStorage on mount
   useEffect(() => {
@@ -46,7 +77,13 @@ export function useTransactionStatus(options: UseTransactionStatusOptions = {}) 
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored) as TransactionHistoryItem[];
-          setHistory(parsed);
+          // Filter out any transactions older than 7 days
+          const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+          const filtered = parsed.filter(tx => 
+            tx.timestamp > oneWeekAgo && 
+            (!tx.metadata?.expiresAt || tx.metadata.expiresAt > Date.now())
+          );
+          setHistory(filtered);
         }
       } catch (error) {
         console.error('Failed to load transaction history:', error);
@@ -58,7 +95,7 @@ export function useTransactionStatus(options: UseTransactionStatusOptions = {}) 
     return () => {
       mountedRef.current = false;
       // Clear all polling intervals on unmount
-      currentIntervalRefs.forEach((interval) => clearInterval(interval));
+      currentIntervalRefs.forEach(({ interval }) => clearInterval(interval));
       currentIntervalRefs.clear();
     };
   }, [persist]);
@@ -142,8 +179,34 @@ export function useTransactionStatus(options: UseTransactionStatusOptions = {}) 
 
         if (!receipt || !mountedRef.current) return;
 
-        const status: TransactionStatus =
-          receipt.status === 'success' ? 'success' : 'reverted';
+        // Check if the transaction was reverted
+        let status: TransactionStatus = receipt.status === 'success' ? 'success' : 'reverted';
+        let error: TransactionError | undefined;
+
+        // If reverted, try to get the revert reason
+        if (status === 'reverted') {
+          try {
+            const tx = await publicClient.getTransaction({ hash });
+            const code = await publicClient.call({
+              ...tx,
+              account: tx.from,
+            });
+            
+            error = {
+              message: 'Transaction reverted',
+              code: 'REVERTED',
+              timestamp: Date.now(),
+              details: code.errorMessage || 'Transaction was reverted by the EVM',
+            };
+          } catch (revertError) {
+            error = {
+              message: 'Transaction reverted',
+              code: 'REVERTED',
+              timestamp: Date.now(),
+              details: 'Transaction was reverted by the EVM',
+            };
+          }
+        }
 
         // Get current block number for confirmations
         const currentBlock = await publicClient.getBlockNumber();
@@ -152,51 +215,105 @@ export function useTransactionStatus(options: UseTransactionStatusOptions = {}) 
         );
 
         updateTransactionStatus(hash, {
-          status:
-            confirmationCount >= confirmations ? status : 'confirming',
+          status: confirmationCount >= confirmations ? status : 'confirming',
           receipt,
           confirmations: confirmationCount,
+          ...(error ? { error } : {}),
         });
 
         // If we have enough confirmations, finalize the transaction
         if (confirmationCount >= confirmations) {
           const transaction = transactions.get(hash);
           if (transaction) {
-            addToHistory({ ...transaction, status, receipt });
+            const finalTx = { ...transaction, status, receipt };
+            if (error) {
+              finalTx.error = error;
+            }
+            addToHistory(finalTx);
 
             if (status === 'success') {
               onSuccess?.(hash, receipt);
+            } else if (error) {
+              onError?.(hash, error);
             } else {
-              const error: TransactionError = {
+              const defaultError: TransactionError = {
                 message: 'Transaction reverted',
+                code: 'UNKNOWN_REVERT',
                 timestamp: Date.now(),
               };
-              onError?.(hash, error);
+              onError?.(hash, defaultError);
             }
           }
 
           // Clear polling interval
-          const interval = intervalRefs.current.get(hash);
-          if (interval) {
-            clearInterval(interval);
+          const intervalData = intervalRefs.current.get(hash);
+          if (intervalData) {
+            clearInterval(intervalData.interval);
             intervalRefs.current.delete(hash);
           }
         }
       } catch (error) {
+        // Check for network change
+        if (networkChanged) {
+          const networkError: TransactionError = {
+            message: 'Network changed',
+            code: 'NETWORK_CHANGED',
+            timestamp: Date.now(),
+            details: 'The network was changed while the transaction was pending'
+          };
+          
+          updateTransactionStatus(hash, {
+            status: 'error',
+            error: networkError,
+          });
+          
+          onError?.(hash, networkError);
+          
+          // Clear polling interval
+          const intervalData = intervalRefs.current.get(hash);
+          if (intervalData) {
+            clearInterval(intervalData.interval);
+            intervalRefs.current.delete(hash);
+          }
+          return;
+        }
+        
         // Receipt not yet available, continue polling
         if (
           error instanceof Error &&
           error.message.includes('Transaction receipt not found')
         ) {
+          // Check for transaction timeout (30 minutes)
+          const txData = intervalRefs.current.get(hash);
+          if (txData && Date.now() - txData.startTime > 30 * 60 * 1000) {
+            const timeoutError: TransactionError = {
+              message: 'Transaction timed out',
+              code: 'TIMEOUT',
+              timestamp: Date.now(),
+              details: 'Transaction took too long to confirm (30+ minutes)'
+            };
+            
+            updateTransactionStatus(hash, {
+              status: 'error',
+              error: timeoutError,
+            });
+            
+            onError?.(hash, timeoutError);
+            
+            // Clear polling interval
+            clearInterval(txData.interval);
+            intervalRefs.current.delete(hash);
+          }
           return;
         }
 
-        // Handle other errors
+        // Handle other errors using the contract error handler
+        const handledError = handleContractError(error, 'transaction_receipt');
         const txError: TransactionError = {
-          message:
-            error instanceof Error ? error.message : 'Unknown error occurred',
-          details: error,
+          message: handledError.message,
+          code: handledError.code?.toString(),
           timestamp: Date.now(),
+          details: handledError.details,
         };
 
         updateTransactionStatus(hash, {
@@ -207,9 +324,9 @@ export function useTransactionStatus(options: UseTransactionStatusOptions = {}) 
         onError?.(hash, txError);
 
         // Clear polling interval
-        const interval = intervalRefs.current.get(hash);
-        if (interval) {
-          clearInterval(interval);
+        const intervalData = intervalRefs.current.get(hash);
+        if (intervalData) {
+          clearInterval(intervalData.interval);
           intervalRefs.current.delete(hash);
         }
       }
@@ -280,12 +397,35 @@ export function useTransactionStatus(options: UseTransactionStatusOptions = {}) 
         return newMap;
       });
 
-      // Start polling for receipt
-      const interval = setInterval(() => {
-        pollForReceipt(hash);
-      }, 2000); // Poll every 2 seconds
-
-      intervalRefs.current.set(hash, interval);
+      // Start polling for receipt with exponential backoff
+      let pollInterval = 2000; // Start with 2 seconds
+      const maxInterval = 30000; // Max 30 seconds between polls
+      
+      const poll = async () => {
+        await pollForReceipt(hash);
+        
+        // If still polling, set next interval with backoff (but don't exceed max)
+        if (intervalRefs.current.has(hash)) {
+          pollInterval = Math.min(pollInterval * 1.5, maxInterval);
+          const intervalId = setTimeout(poll, pollInterval);
+          
+          // Update the interval reference
+          const existing = intervalRefs.current.get(hash);
+          if (existing) {
+            clearTimeout(existing.interval);
+            intervalRefs.current.set(hash, {
+              interval: intervalId,
+              startTime: existing.startTime
+            });
+          }
+        }
+      };
+      
+      const initialInterval = setInterval(poll, pollInterval);
+      intervalRefs.current.set(hash, {
+        interval: initialInterval,
+        startTime: Date.now()
+      });
 
       // Initial poll
       pollForReceipt(hash);
@@ -344,9 +484,9 @@ export function useTransactionStatus(options: UseTransactionStatusOptions = {}) 
     });
 
     // Clear polling interval if exists
-    const interval = intervalRefs.current.get(hash);
-    if (interval) {
-      clearInterval(interval);
+    const intervalData = intervalRefs.current.get(hash);
+    if (intervalData) {
+      clearInterval(intervalData.interval);
       intervalRefs.current.delete(hash);
     }
   }, []);
@@ -358,7 +498,7 @@ export function useTransactionStatus(options: UseTransactionStatusOptions = {}) 
     setTransactions(new Map());
 
     // Clear all polling intervals
-    intervalRefs.current.forEach((interval) => clearInterval(interval));
+    intervalRefs.current.forEach(({ interval }) => clearInterval(interval));
     intervalRefs.current.clear();
   }, []);
 
