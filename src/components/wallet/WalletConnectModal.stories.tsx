@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { WalletConnectModal } from './WalletConnectModal';
+import WalletConnectModal from './WalletConnectModal';
 
 const meta: Meta<typeof WalletConnectModal> = {
   title: 'Components/WalletConnectModal',
