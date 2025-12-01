@@ -1,4 +1,4 @@
-import type { StorybookConfig } from "@storybook/nextjs-vite";
+import type { StorybookConfig } from '@storybook/nextjs-vite';
 
 const config: StorybookConfig = {
   "stories": [
@@ -7,15 +7,12 @@ const config: StorybookConfig = {
   ],
   "addons": [
     "@chromatic-com/storybook",
-    "@storybook/addon-docs",
-    "@storybook/addon-onboarding",
+    "@storybook/addon-vitest",
     "@storybook/addon-a11y",
-    "@storybook/addon-vitest"
+    "@storybook/addon-docs",
+    "@storybook/addon-onboarding"
   ],
-  "framework": {
-    "name": "@storybook/nextjs-vite",
-    "options": {}
-  },
+  "framework": "@storybook/nextjs-vite",
   "staticDirs": [
     "../public"
   ]
