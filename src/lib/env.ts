@@ -6,9 +6,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: z.string().min(1, {
     message: 'NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is required',
   }),
-  NEXT_PUBLIC_NETWORK: z.enum(['mainnet', 'testnet', 'local'] as const, {
-    errorMap: () => ({ message: 'NEXT_PUBLIC_NETWORK is required and must be one of: mainnet, testnet, local' }),
-  }),
+  NEXT_PUBLIC_NETWORK: z.enum(['mainnet', 'testnet', 'local'] as const).default('mainnet'),
   NEXT_PUBLIC_CONTRACT_ADDRESS: z.string().min(1, {
     message: 'NEXT_PUBLIC_CONTRACT_ADDRESS is required',
   }),
@@ -25,17 +23,30 @@ const envSchema = z.object({
   NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
 });
 
-// Validate the environment variables
-export const env = envSchema.parse({
-  NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
-  NEXT_PUBLIC_NETWORK: process.env.NEXT_PUBLIC_NETWORK,
-  NEXT_PUBLIC_CONTRACT_ADDRESS: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
-  NEXT_PUBLIC_BASE_RPC_URL: process.env.NEXT_PUBLIC_BASE_RPC_URL,
-  NEXT_PUBLIC_GRAPH_API_URL: process.env.NEXT_PUBLIC_GRAPH_API_URL,
-  NEXT_PUBLIC_PLAUSIBLE_DOMAIN: process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN,
-  SENTRY_DSN: process.env.SENTRY_DSN,
-  NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
-});
+// Function to validate environment variables
+export function validateEnv() {
+  try {
+    return envSchema.parse(process.env);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const { fieldErrors } = error.flatten();
+      const errorMessage = Object.entries(fieldErrors)
+        .map(([field, errors]) => 
+          `- ${field}: ${errors?.join(', ')}`
+        )
+        .join('\n');
+      
+      throw new Error(`❌ Invalid environment variables:\n${errorMessage}`);
+    }
+    throw error;
+  }
+}
+
+// Validate environment variables on application start
+const env = validateEnv();
+
+// Export the validated environment variables
+export default env;
 
 // Export the type for type safety
 export type Env = z.infer<typeof envSchema>;
