@@ -123,26 +123,8 @@ This project demonstrates how to build a fully onchain messaging platform where:
 
 ```
 frontend/
-├── src/                    # Source code
-│   ├── app/               # Next.js app directory (pages)
-│   ├── components/        # Reusable UI components
-│   ├── context/           # React context providers
-│   ├── hooks/             # Custom React hooks
-│   ├── lib/               # Utility functions and config
-│   └── styles/            # Global styles
-├── public/                # Static assets
-├── contracts/             # Smart contracts
-├── tests/                 # Test files
-└── docs/                  # Documentation
-```
-
-
-### Project Structure
-
-```
-frontend/
 ├── src/
-│   ├── app/                    # Next.js app directory
+│   ├── app/                    # Next.js app directory (pages)
 │   │   ├── page.tsx           # Homepage
 │   │   ├── chat/              # Chat interface
 │   │   ├── rooms/             # Room management
