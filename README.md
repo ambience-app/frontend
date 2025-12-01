@@ -2,6 +2,64 @@
 
 A decentralized, blockchain-based chat application built on Base blockchain that enables secure, transparent, and censorship-resistant communication. All messages are stored onchain, ensuring immutability and verifiability.
 
+## 🚀 Quick Start
+
+Get started with Ambience Chat in minutes:
+
+```bash
+# Clone the repository
+git clone https://github.com/ambience-app/frontend.git
+cd frontend
+
+# Install dependencies
+npm install
+
+# Copy environment variables
+cp .env.example .env.local
+
+# Start development server
+npm run dev
+```
+
+Visit [http://localhost:3000](http://localhost:3000) in your browser to see the app running.
+
+## 📋 Prerequisites
+
+- Node.js 20.x or higher
+- npm (v7+) or yarn (v1.22+)
+- Git
+- Web3 wallet (MetaMask, Coinbase Wallet, etc.)
+- Test ETH on Base Sepolia (for testing)
+
+## 🔧 Environment Setup
+
+1. Create a `.env.local` file in the root directory with the following variables:
+
+```env
+# Required
+NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_walletconnect_project_id
+
+# Optional (with defaults)
+NEXT_PUBLIC_CHAIN_ID=84532  # Base Sepolia testnet
+NEXT_PUBLIC_RPC_URL=https://sepolia.base.org
+NEXT_PUBLIC_APP_NAME=Ambience Chat
+```
+
+2. Get your Alchemy API key from [Alchemy](https://www.alchemy.com/)
+3. Get your WalletConnect Project ID from [WalletConnect Cloud](https://cloud.walletconnect.com/)
+
+## 🛠 Development
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm start` - Start production server
+- `npm test` - Run tests
+- `npm run lint` - Run ESLint
+- `npm run format` - Format code with Prettier
+
 ## Overview
 
 This project demonstrates how to build a fully onchain messaging platform where:
@@ -61,21 +119,12 @@ This project demonstrates how to build a fully onchain messaging platform where:
 └─────────────────┘
 ```
 
-## Prerequisites
-
-- Node.js 20.x or higher
-- npm/yarn/pnpm/bun package manager
-- MetaMask or compatible Web3 wallet
-- Base Sepolia testnet ETH (for testing)
-- Git
-
-
-### Project Structure
+## 🏗 Project Structure
 
 ```
 frontend/
 ├── src/
-│   ├── app/                    # Next.js app directory
+│   ├── app/                    # Next.js app directory (pages)
 │   │   ├── page.tsx           # Homepage
 │   │   ├── chat/              # Chat interface
 │   │   ├── rooms/             # Room management
